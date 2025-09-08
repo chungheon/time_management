@@ -4,6 +4,8 @@ import 'package:time_management/app_state_container.dart';
 import 'package:time_management/constants/dialog_constants.dart';
 import 'package:time_management/constants/effect_constants.dart';
 import 'package:time_management/controllers/goals_controller.dart';
+import 'package:time_management/controllers/notifications_controller.dart';
+import 'package:time_management/controllers/routine_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/document_model.dart';
 import 'package:time_management/models/goal_model.dart';
@@ -32,9 +34,17 @@ class EditTaskPage extends StatelessWidget {
         : DateTimeHelpers.getDateStr(task.actionDate);
     selectedGoal.value = task.goal;
     _docUid.value = task.documents.map<int>((e) => e.uid ?? -1).toList();
+    _selectedTime.value = task.alertTime == null
+        ? null
+        : TimeOfDay.fromDateTime(
+            DateTime.fromMillisecondsSinceEpoch(task.alertTime!));
+    _timeStr.value = _selectedTime.value?.timeFormat() ?? "";
   }
   final Task task;
   final GoalsController _goalsController = Get.find<GoalsController>();
+  final RoutineController _routineController = Get.find<RoutineController>();
+  final NotificationsController _notificationsController =
+      Get.find<NotificationsController>();
   final String? returnRoute;
   final Rxn<Goal> selectedGoal = Rxn<Goal>();
   final FocusNode _taskNode = FocusNode();
@@ -48,18 +58,23 @@ class EditTaskPage extends StatelessWidget {
   final RxBool _hideAdded = false.obs;
   final RxBool _hideExisting = false.obs;
   final _dateTextController = TextEditingController();
+  final Rxn<TimeOfDay> _selectedTime = Rxn<TimeOfDay>();
+  final RxString _timeStr = RxString("");
 
   Future<void> onTapUpdateTask() async {
     Get.off(() => LoadingPageWidget(
           asyncFunc: () async {
-            var result = await _goalsController.editTask(task,
-                taskStr: _taskInput.value,
-                goalId: selectedGoal.value!.uid!,
-                actionDate: DateTimeHelpers.tryParse(_startDateInput.value)
-                        ?.millisecondsSinceEpoch ??
-                    0,
-                docList: _docUid,
-                addDocs: newDocuments);
+            var result = await _goalsController.editTask(
+              task,
+              taskStr: _taskInput.value,
+              goalId: selectedGoal.value!.uid!,
+              actionDate: DateTimeHelpers.tryParse(_startDateInput.value)
+                      ?.millisecondsSinceEpoch ??
+                  0,
+              docList: _docUid,
+              addDocs: newDocuments,
+              alertTime: _selectedTime.value,
+            );
             Goal selGoal = _goalsController.goalList.firstWhere(
               (element) {
                 return element.uid == (selectedGoal.value!.uid);
@@ -70,7 +85,9 @@ class EditTaskPage extends StatelessWidget {
               _goalsController.updateGoal(selGoal);
             }
 
-            _goalsController.updateTask(task, selGoal);
+            await _goalsController.updateTask(task, selGoal);
+            _notificationsController.refreshNotifications(
+                _routineController, _goalsController);
             return result;
           },
           onComplete: (taskUid) async {
@@ -152,7 +169,7 @@ class EditTaskPage extends StatelessWidget {
                           children: [
                             Expanded(
                               child: InputTextField(
-                                title: 'Start Date (optional)',
+                                title: 'Start Date (Optional)',
                                 hintText: 'When should you be informed?',
                                 initialValue: task.actionDate != null
                                     ? DateTimeHelpers.getDateStr(
@@ -170,6 +187,10 @@ class EditTaskPage extends StatelessWidget {
                             ),
                           ],
                         ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                        child: Obx(() => _timeSelection(context)),
                       ),
                       Container(
                         alignment: Alignment.centerLeft,
@@ -319,6 +340,56 @@ class EditTaskPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _timeSelection(BuildContext context) {
+    TimeOfDay now = TimeOfDay.now();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Time of Notification (Optional)",
+          style: AppStyles.defaultFont.copyWith(
+              fontSize: AppFontSizes.body, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(
+          height: 5.0,
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: InputTextField(
+                hintText: "HH:mm",
+                initialValue: (_selectedTime.value?.timeFormat()),
+                onChanged: (time) {
+                  _timeStr.value = time;
+                },
+              ),
+            ),
+            GestureDetector(
+              onTap: () async {
+                TimeOfDay? timeSelected = await showTimePicker(
+                  context: context,
+                  initialTime: now,
+                );
+                if (timeSelected != null) {
+                  _selectedTime.value = timeSelected;
+                }
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+              child: Container(
+                width: 50.0,
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: const FittedBox(child: Icon(Icons.punch_clock_rounded)),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(
+          height: 10.0,
+        ),
+      ],
     );
   }
 

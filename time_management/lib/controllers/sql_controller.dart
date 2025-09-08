@@ -17,7 +17,7 @@ class SQLController extends GetxController {
     var path = join(await getDatabasesPath(), dbName);
     var archive = join(await getDatabasesPath(), archiveDb);
     final database =
-        await openDatabase(path, version: 1, onConfigure: (Database db) async {
+        await openDatabase(path, version: 2, onConfigure: (Database db) async {
       await db.execute('PRAGMA foreign_keys = ON');
     }, onCreate: (db, version) {
       db.execute(SQLConstants.createGoalsTable);
@@ -29,7 +29,7 @@ class SQLController extends GetxController {
       db.execute(SQLConstants.createDocumentTaskTable);
       db.execute(SQLConstants.createRoutineTable);
       db.execute(SQLConstants.createChecklistTable);
-    }, onOpen: (db) {
+    }, onOpen: (db) async {
       db.execute(SQLConstants.createGoalsTable);
       db.execute(SQLConstants.createTagsTable);
       db.execute(SQLConstants.createTaskTable);
@@ -38,6 +38,18 @@ class SQLController extends GetxController {
       db.execute(SQLConstants.createDocumentTaskTable);
       db.execute(SQLConstants.createRoutineTable);
       db.execute(SQLConstants.createChecklistTable);
+    }, onUpgrade: (db, oldVersion, newVersion) {
+      if (newVersion - 1 > SQLConstants.upgrades.length) {
+        return;
+      }
+      for (int currIndex = oldVersion - 1;
+          currIndex < newVersion - 1;
+          currIndex++) {
+        List<String> upgrades = SQLConstants.upgrades[currIndex];
+        for (int i = 0; i < upgrades.length; i++) {
+          db.execute(upgrades[i]);
+        }
+      }
     });
     _archiveDatabase =
         await openDatabase(archive, version: 1, onConfigure: (db) async {

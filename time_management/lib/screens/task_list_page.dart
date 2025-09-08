@@ -89,6 +89,17 @@ class TaskListPage extends StatelessWidget {
                   var currRoute = Get.currentRoute;
                   Get.to(() => AddTaskPage(
                         returnRoute: currRoute,
+                        onCreateComplete: (taskUid) {
+                          int now =
+                              DateTime.now().dateOnly().millisecondsSinceEpoch;
+                          print(_goalsController.dayPlansList[now]);
+                          if (taskUid != null &&
+                              (_goalsController.dayPlansList[now] ?? [])
+                                  .isNotEmpty) {
+                            _goalsController.addDayPlanItem(taskUid);
+                            _goalsController.refreshPlanList();
+                          }
+                        },
                       ));
                 },
                 customBorder: const CircleBorder(),

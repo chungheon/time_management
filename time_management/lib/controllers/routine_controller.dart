@@ -9,6 +9,7 @@ import 'package:time_management/controllers/sql_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/helpers/sql_helper.dart';
 import 'package:time_management/models/checklist_item_model.dart';
+import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/routine_model.dart';
 
 class RoutineController extends GetxController {
@@ -64,14 +65,18 @@ class RoutineController extends GetxController {
     goalsController.update();
   }
 
-  Future<void> deleteRoutine(
-      NotificationsController notificationsController, Routine routine) async {
+  Future<void> deleteRoutine(NotificationsController notificationsController,
+      GoalsController goalsController, Routine routine) async {
     try {
       _sqlController.rawDelete(SQLHelper.deleteStmtAnd(
           SQLConstants.routineTable,
           equal: {SQLConstants.colRoutineId: routine.uid}));
       routineList.removeWhere((element) => element.uid == routine.uid);
-      notificationsController.setupRoutineNotifications(routineList);
+      notificationsController.setupRoutineNotifications(
+          routineList,
+          goalsController.dayPlansList[
+                  DateTime.now().dateOnly().millisecondsSinceEpoch] ??
+              []);
       update();
     } catch (e) {
       rethrow;
@@ -92,7 +97,6 @@ class RoutineController extends GetxController {
       time = timeOfDay.hour * 60 * 60 * 1000 + timeOfDay.minute * 60 * 1000;
     }
 
-    DateTime now = DateTime.now();
     DateTime endUTCDate = endDate.add(Duration(milliseconds: time));
     DateTime? startUTCDate = startDate?.add(Duration(milliseconds: time));
     Routine routine = Routine(

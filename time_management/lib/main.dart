@@ -38,10 +38,12 @@ Future<void> initSQL() async {
 Future<void> initNotifications() async {
   NotificationsController notificationsController = NotificationsController();
   RoutineController routineController = RoutineController();
+  GoalsController goalsController = GoalsController();
   Get.put(routineController, permanent: true);
   Get.put(notificationsController, permanent: true);
+  Get.put(goalsController, permanent: true);
   await routineController.init();
-  notificationsController.init(routineController.routineList);
+  notificationsController.init(routineController, goalsController);
 }
 
 //Create all controllers that REQUIRE initialization and whole lifecycle before removing splash screen
@@ -49,7 +51,6 @@ Future<void> initialization() async {
   initSQL();
   initNotifications();
   Get.lazyPut(() => DocumentViewerController(), fenix: true);
-  Get.lazyPut(() => GoalsController(), fenix: true);
   Get.lazyPut(() => GoalViewController(), fenix: true);
   Get.lazyPut(() => ViewController(), fenix: true);
 }

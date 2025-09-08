@@ -1,8 +1,16 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
+import 'package:time_management/constants/sql_constants.dart';
+import 'package:time_management/constants/string_constants.dart';
+import 'package:time_management/controllers/goals_controller.dart';
+import 'package:time_management/controllers/routine_controller.dart';
+import 'package:time_management/helpers/date_time_helpers.dart';
+import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/routine_model.dart';
+import 'package:time_management/models/task_model.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationsController extends GetxController {
@@ -24,16 +32,26 @@ class NotificationsController extends GetxController {
       StreamController<NotificationResponse>.broadcast();
   int idCounter = 0;
 
-  Future<void> init(List<Routine> routines) async {
+  Future<void> init(RoutineController routineController,
+      GoalsController goalsController) async {
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: selectNotificationStream.add);
     _configureRecievedNotifications();
-    setupRoutineNotifications(routines);
+    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
+    setupRoutineNotifications(
+        routineController.routineList, goalsController.dayPlansList[now] ?? []);
   }
 
-  Future<void> setupRoutineNotifications(List<Routine> routines) async {
+  Future<void> refreshNotifications(RoutineController routineController,
+      GoalsController goalsController) async {
+    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
+    setupRoutineNotifications(
+        routineController.routineList, goalsController.dayPlansList[now] ?? []);
+  }
+
+  Future<void> setupRoutineNotifications(
+      List<Routine> routines, List<DayPlanItem> todayPlanItems) async {
     flutterLocalNotificationsPlugin.cancelAll();
-    idCounter = 0;
     for (var routine in routines) {
       try {
         if ((routine.seq ?? -1) < 4) {
@@ -45,6 +63,34 @@ class NotificationsController extends GetxController {
         //   scheduleAlarm(routine.name ?? "", routine.desc ?? "",
         //       DateTime.fromMillisecondsSinceEpoch(routine.endDate!));
         // }
+      } on Exception {
+        // Ignore for now
+      }
+    }
+    for (var dayItem in todayPlanItems) {
+      try {
+        if (dayItem.task != null && dayItem.task!.alertTime != null) {
+          Task task = dayItem.task!;
+
+          DateTime alertTime = DateTime.now().dateOnly();
+          DateTime now = DateTime.now();
+          TimeOfDay alert = TimeOfDay.fromDateTime(
+              DateTime.fromMillisecondsSinceEpoch(task.alertTime!));
+          int time = alert.hour * 60 * 60 * 1000 + alert.minute * 60 * 1000;
+          alertTime = alertTime.add(Duration(milliseconds: time));
+          if (now.isBefore(alertTime)) {
+            scheduleAlarm(
+                alert.hour.toString().padLeft(2, '0') +
+                    ":" +
+                    alert.minute.toString().padLeft(2, '0') +
+                    " " +
+                    StringConstants
+                        .taskPriorities[dayItem.taskPriority?.index ?? 0]
+                        .toUpperCase(),
+                task.task ?? "",
+                alertTime);
+          }
+        }
       } on Exception {
         // Ignore for now
       }
@@ -108,23 +154,33 @@ class NotificationsController extends GetxController {
         : (min(sortedId.first, sortedId.last) - 1);
   }
 
-  // Future<void> scheduleAlarm(String title, String body, DateTime time,
-  //     {String? payload}) async {
-  //   final AndroidNotificationDetails androidNotificationDetails =
-  //       AndroidNotificationDetails(
-  //     'Scheduled Alarm',
-  //     'Alarm',
-  //     channelDescription: 'Alarms that are scheduled to show once',
-  //     importance: Importance.max,
-  //     priority: Priority.high,
-  //     when: time.millisecondsSinceEpoch,
-  //   );
-  //   final NotificationDetails notificationDetails =
-  //       NotificationDetails(android: androidNotificationDetails);
-  //   await flutterLocalNotificationsPlugin.show(
-  //       await getActiveNotificationsId(), title, body, notificationDetails,
-  //       payload: payload);
-  // }
+  Future<void> scheduleAlarm(String title, String body, DateTime time,
+      {String? payload}) async {
+    final AndroidNotificationDetails androidNotificationDetails =
+        AndroidNotificationDetails('Scheduled Alarm', 'Alarm',
+            channelDescription: 'Alarms that are scheduled to show once',
+            importance: Importance.max,
+            priority: Priority.high,
+            onlyAlertOnce: true,
+            when: time.millisecondsSinceEpoch);
+    DateTime date = time;
+    tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,
+            date.day, date.hour, date.minute, date.second)
+        .subtract(date.timeZoneOffset);
+    final NotificationDetails notificationDetails =
+        NotificationDetails(android: androidNotificationDetails);
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      await getActiveNotificationsId(),
+      title,
+      body,
+      scheduled,
+      notificationDetails,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: payload,
+    );
+  }
 
   Future<int> scheduleRoutine(Routine routine, {String? payload}) async {
     DateTimeComponents schedule;
@@ -159,7 +215,8 @@ class NotificationsController extends GetxController {
     }
     DateTime date = DateTime.fromMillisecondsSinceEpoch(routine.endDate ?? 0);
     tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,
-        date.day, date.hour, date.minute, date.second).subtract(date.timeZoneOffset);
+            date.day, date.hour, date.minute, date.second)
+        .subtract(date.timeZoneOffset);
     int id = ++idCounter;
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(

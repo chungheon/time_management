@@ -9,7 +9,6 @@ import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
-import 'package:time_management/models/routine_model.dart';
 import 'package:time_management/styles.dart';
 import 'package:time_management/widgets/input_text_field.dart';
 import 'package:time_management/widgets/loading_page_widget.dart';
@@ -256,7 +255,6 @@ class AddRoutinePage extends StatelessWidget {
         endDateRange: endDateRange,
         onChanged: (String rDate) {
           reminderDate.value = DateTimeHelpers.tryParse(rDate);
-          print("Changed Date " + reminderDate.value.toString());
         },
       ),
     );

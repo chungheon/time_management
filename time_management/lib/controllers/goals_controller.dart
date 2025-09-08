@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_adjacent_string_concatenation
 
+import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
 import 'package:time_management/constants/sql_constants.dart';
@@ -163,11 +164,16 @@ class GoalsController extends GetxController {
         Task? task = (await fetchTaskById(d.taskId ?? -1));
         try {
           if (task?.goalTaskId != null) {
-            d.task = goalList[task!.goalTaskId! - 1]
-                .tasks
+            d.task = goalList
+                .firstWhereOrNull(
+                  (goal) {
+                    return goal.uid == task?.goalTaskId;
+                  },
+                )
+                ?.tasks
                 .firstWhere((element) => element.uid == d.taskId);
           }
-        } on StateError {
+        } on Error {
           //Ignore
         }
       }
@@ -214,7 +220,7 @@ class GoalsController extends GetxController {
       goal.tasks = await fetchAllTasks(goal);
 
       return goal;
-    } on StateError {
+    } on Error {
       //Ignore
     }
     return null;
@@ -318,17 +324,30 @@ class GoalsController extends GetxController {
     TaskStatus? status,
     int? actionDate,
     int? completionDate,
+    TimeOfDay? alertTime,
     List<int>? docList,
     List<Document>? addDocs,
   }) async {
+    DateTime now = DateTime.now().dateOnly();
+    int time = 0;
+    if (alertTime != null) {
+      time = alertTime.hour * 60 * 60 * 1000 + alertTime.minute * 60 * 1000;
+    }
     Task updatedTask = Task(
         uid: task.uid,
         goalTaskId: goalId ?? task.goalTaskId,
         task: taskStr ?? task.task,
-        actionDate: actionDate == 0 ? null : actionDate ?? task.actionDate,
+        actionDate: actionDate == 0 ? null : actionDate,
         status: status ?? task.status,
         completionDate:
-            completionDate == 0 ? null : completionDate ?? task.completionDate);
+            completionDate == 0 ? null : completionDate ?? task.completionDate,
+        alertTime: time == 0
+            ? null
+            : (alertTime == null
+                ? null
+                : now
+                    .add(Duration(milliseconds: time))
+                    .millisecondsSinceEpoch));
     List<int> diffUids = List.empty();
     if (docList != null) {
       List<int> currUids = task.documents.map<int>((e) => e.uid ?? -1).toList();
@@ -453,6 +472,25 @@ class GoalsController extends GetxController {
         return false;
       }
     }
+    return true;
+  }
+
+  Future<bool> addDayPlanItem(int taskUid) async {
+    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
+    DayPlanItem newItem = DayPlanItem(
+      date: now,
+      taskId: taskUid,
+      taskPriority: TaskPriority.niceToHave,
+      task: await fetchTaskById(taskUid),
+    );
+    if (dayPlansList[now] == null) {
+      createDayPlan([newItem]);
+    } else {
+      List<DayPlanItem> curr = dayPlansList[now]!;
+      curr.add(newItem);
+      await updateDayPlan(curr, dayPlansList[now] ?? []);
+    }
+
     return true;
   }
 

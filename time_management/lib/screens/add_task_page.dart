@@ -212,6 +212,9 @@ class AddTaskPage extends StatelessWidget {
                                 },
                               ),
                       ),
+                      const SizedBox(
+                        height: 20.0,
+                      )
                     ],
                   ),
                 ),

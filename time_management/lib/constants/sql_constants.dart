@@ -6,6 +6,15 @@ mixin SQFLiteObject {
 }
 
 class SQLConstants {
+  static const List<List<String>> upgrades = [
+    [
+      'ALTER TABLE ' +
+          SQLConstants.taskTable +
+          ' ADD COLUMN ' +
+          SQLConstants.colTaskAlertTime +
+          ' INTEGER'
+    ]
+  ];
   static const String createGoalsTable =
       'CREATE TABLE IF NOT EXISTS $goalTable($colGoalId INTEGER PRIMARY KEY, $colGoalName TEXT,' +
           ' $colGoalPurpose TEXT, $colGoalDueDate INTEGER);';
@@ -163,7 +172,6 @@ class SQLConstants {
     colChecklistRoutineId,
   ];
 
-
   /*Tags Table 
   NON NULL colTagGoalId
   */
@@ -229,6 +237,7 @@ class SQLConstants {
   static const String colTaskActionDate = "action_date";
   static const String colTaskStatus = "status";
   static const String colTaskCompletionDate = "completion_date";
+  static const String colTaskAlertTime = "task_alert_time";
 
   //List of all Manual tasks table columns
   static const List<String> taskCols = [
@@ -236,6 +245,7 @@ class SQLConstants {
     colTaskActionDate,
     colTaskStatus,
     colTaskCompletionDate,
+    colTaskAlertTime
   ];
 
   /*
