@@ -109,6 +109,4 @@ class DayPlanItem with SQFLiteObject {
     return isEqual;
   }
 
-  @override
-  int get hashCode => super.hashCode;
 }

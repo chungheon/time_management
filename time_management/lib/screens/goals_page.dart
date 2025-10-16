@@ -463,7 +463,8 @@ class _GoalsPageState extends State<GoalsPage>
                                     onConfirm: () async {
                                       Get.to(() => LoadingPageWidget(
                                             asyncFunc: () async {
-                                              try {                                                Goal goal =
+                                              try {
+                                                Goal goal =
                                                     _goalsController.goalList[
                                                         _goalViewController
                                                             .currentGoal.value];
@@ -833,17 +834,22 @@ class _GoalsPageState extends State<GoalsPage>
                 tabs: [
                   Text(
                     "To Do",
-                    style: AppStyles.defaultFont.copyWith(fontSize: 16.0),
+                    style: AppStyles.defaultFont.copyWith(fontSize: 14.0),
                   ),
                   Text("Completed",
-                      style: AppStyles.defaultFont.copyWith(fontSize: 16.0)),
+                      style: AppStyles.defaultFont.copyWith(fontSize: 14.0)),
+                  Text("Overdue",
+                      style: AppStyles.defaultFont.copyWith(fontSize: 14.0)),
                   GetBuilder(
                     init: _goalsController,
                     builder: (controller) {
-                      return Text(
-                          "${controller.goalList[_goalViewController.currentGoal.value].documents.length} Documents",
-                          style:
-                              AppStyles.defaultFont.copyWith(fontSize: 16.0));
+                      return FittedBox(
+                        child: Text(
+                            "${controller.goalList[_goalViewController.currentGoal.value].documents.length}\nDocuments",
+                            textAlign: TextAlign.center,
+                            style:
+                                AppStyles.defaultFont),
+                      );
                     },
                   ),
                 ]),
@@ -853,10 +859,22 @@ class _GoalsPageState extends State<GoalsPage>
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
                   _todoList(tasks
-                      .where(
-                          (element) => element.status != TaskStatus.completed)
+                      .where((element) =>
+                          element.status != TaskStatus.completed &&
+                          (element.actionDate == null ||
+                              element.actionDate! >=
+                                  DateTime.now()
+                                      .dateOnly()
+                                      .millisecondsSinceEpoch))
                       .toList()),
                   _completedList(completedTasksList),
+                  _todoList(tasks
+                      .where((element) =>
+                          element.status != TaskStatus.completed &&
+                          element.actionDate != null &&
+                          element.actionDate! <
+                              DateTime.now().dateOnly().millisecondsSinceEpoch)
+                      .toList()),
                   _documentList(
                     _goalsController
                         .goalList[_goalViewController.currentGoal.value]

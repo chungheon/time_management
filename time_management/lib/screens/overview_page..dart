@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:time_management/app_icons.dart';
 import 'package:time_management/app_state_container.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
@@ -58,28 +57,18 @@ class _OverviewPageState extends State<OverviewPage>
 
     return Material(
       color: StateContainer.of(context)?.currTheme.background,
-      child: Stack(
-        fit: StackFit.expand,
+      child: Column(
         children: [
-          Column(
-            children: [
-              TabBar(
-                  controller: _tabController,
-                  tabs: [Tab(text: 'Checklist'), Tab(text: 'Routines')]),
-              Expanded(
-                child: TabBarView(controller: _tabController, children: [
-                  _checklistView(context),
-                  _routinesList(),
-                ]),
-              ),
-            ],
+          TabBar(
+              controller: _tabController,
+              tabs:const [Tab(text: 'Checklist'), Tab(text: 'Routines')]),
+          Expanded(
+            child: TabBarView(controller: _tabController, children: [
+              _checklistView(context),
+              _routinesList(),
+            ]),
           ),
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: _createRoutineButton(context),
-          ),
+          _createRoutineButton(context),
         ],
       ),
     );
@@ -97,134 +86,132 @@ class _OverviewPageState extends State<OverviewPage>
           ),
         ),
         Expanded(
-          child: ListView(
-            children: [
-              GetBuilder(
-                init: _goalsController,
-                builder: (controller) {
-                  DateTime now = DateTime.now().dateOnly();
-                  DateTime nextDay =
-                      now.add(const Duration(days: 1)).dateOnly();
+            child: Column(
+          children: [
+            GetBuilder(
+              init: _goalsController,
+              builder: (controller) {
+                DateTime now = DateTime.now().dateOnly();
+                DateTime nextDay = now.add(const Duration(days: 1)).dateOnly();
 
-                  String currDayStr = DateTimeHelpers.getFormattedDate(now,
-                      dateFormat: "dd/MM");
+                String currDayStr =
+                    DateTimeHelpers.getFormattedDate(now, dateFormat: "dd/MM");
 
-                  String nextDayStr = DateTimeHelpers.getFormattedDate(nextDay,
-                      dateFormat: "dd/MM");
-                  List<DayPlanItem> nextDayPlan =
-                      controller.dayPlansList[nextDay.millisecondsSinceEpoch] ??
-                          [];
-                  bool nextDayHas =
-                      nextDayPlan.isNotEmpty && nextDayPlan.first.uid != null;
-                  List<DayPlanItem> thisDayPLan =
-                      controller.dayPlansList[now.millisecondsSinceEpoch] ?? [];
-                  bool thisDayHas =
-                      thisDayPLan.isNotEmpty && thisDayPLan.first.uid != null;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Material(
-                        color: StateContainer.of(context)?.currTheme.button,
-                        child: InkWell(
-                          onTap: () {
-                            if (nextDayHas) {
-                              var currRoute = Get.currentRoute;
-                              Get.to(() => DayPlanReviewPage(
-                                    returnRoute: currRoute,
-                                    planDate: nextDay,
-                                    dayList: nextDayPlan,
-                                  ));
-                            } else {
-                              var currRoute = Get.currentRoute;
-                              Get.to(() => DayPlanReviewPage(
-                                    returnRoute: currRoute,
-                                    planDate: nextDay,
-                                  ));
-                            }
-                          },
-                          splashColor: Colors.green,
-                          child: Container(
-                            width: double.infinity,
-                            height: 40.0,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20.0, vertical: 7.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Review Plans for $nextDayStr',
-                                    style: AppStyles.defaultFont
-                                        .copyWith(fontSize: AppFontSizes.body),
-                                  ),
+                String nextDayStr = DateTimeHelpers.getFormattedDate(nextDay,
+                    dateFormat: "dd/MM");
+                List<DayPlanItem> nextDayPlan =
+                    controller.dayPlansList[nextDay.millisecondsSinceEpoch] ??
+                        [];
+                bool nextDayHas =
+                    nextDayPlan.isNotEmpty && nextDayPlan.first.uid != null;
+                List<DayPlanItem> thisDayPLan =
+                    controller.dayPlansList[now.millisecondsSinceEpoch] ?? [];
+                bool thisDayHas =
+                    thisDayPLan.isNotEmpty && thisDayPLan.first.uid != null;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Material(
+                      color: StateContainer.of(context)?.currTheme.button,
+                      child: InkWell(
+                        onTap: () {
+                          if (nextDayHas) {
+                            var currRoute = Get.currentRoute;
+                            Get.to(() => DayPlanReviewPage(
+                                  returnRoute: currRoute,
+                                  planDate: nextDay,
+                                  dayList: nextDayPlan,
+                                ));
+                          } else {
+                            var currRoute = Get.currentRoute;
+                            Get.to(() => DayPlanReviewPage(
+                                  returnRoute: currRoute,
+                                  planDate: nextDay,
+                                ));
+                          }
+                        },
+                        splashColor: Colors.green,
+                        child: Container(
+                          width: double.infinity,
+                          height: 40.0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 7.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Review Plans for $nextDayStr',
+                                  style: AppStyles.defaultFont
+                                      .copyWith(fontSize: AppFontSizes.body),
                                 ),
-                                !nextDayHas
-                                    ? const FittedBox(
-                                        child:
-                                            Icon(Icons.check_box_outline_blank))
-                                    : const FittedBox(
-                                        child: Icon(Icons.check_box_outlined)),
-                              ],
-                            ),
+                              ),
+                              !nextDayHas
+                                  ? const FittedBox(
+                                      child:
+                                          Icon(Icons.check_box_outline_blank))
+                                  : const FittedBox(
+                                      child: Icon(Icons.check_box_outlined)),
+                            ],
                           ),
                         ),
                       ),
-                      const SizedBox(
-                        height: 7.0,
-                      ),
-                      Material(
-                        color: StateContainer.of(context)?.currTheme.button,
-                        child: InkWell(
-                          onTap: () {
-                            if (thisDayHas) {
-                              var currRoute = Get.currentRoute;
-                              Get.to(() => DayPlanReviewPage(
-                                    returnRoute: currRoute,
-                                    planDate: now,
-                                    dayList: _goalsController.dayPlansList[
-                                        now.millisecondsSinceEpoch],
-                                  ));
-                            } else {
-                              var currRoute = Get.currentRoute;
-                              Get.to(() => DayPlanReviewPage(
-                                    returnRoute: currRoute,
-                                    planDate: now,
-                                  ));
-                            }
-                          },
-                          splashColor: Colors.green,
-                          child: Container(
-                            width: double.infinity,
-                            height: 40.0,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20.0, vertical: 7.0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    'Review Plans for $currDayStr',
-                                    style: AppStyles.defaultFont
-                                        .copyWith(fontSize: AppFontSizes.body),
-                                  ),
+                    ),
+                    const SizedBox(
+                      height: 7.0,
+                    ),
+                    Material(
+                      color: StateContainer.of(context)?.currTheme.button,
+                      child: InkWell(
+                        onTap: () {
+                          if (thisDayHas) {
+                            var currRoute = Get.currentRoute;
+                            Get.to(() => DayPlanReviewPage(
+                                  returnRoute: currRoute,
+                                  planDate: now,
+                                  dayList: _goalsController
+                                      .dayPlansList[now.millisecondsSinceEpoch],
+                                ));
+                          } else {
+                            var currRoute = Get.currentRoute;
+                            Get.to(() => DayPlanReviewPage(
+                                  returnRoute: currRoute,
+                                  planDate: now,
+                                ));
+                          }
+                        },
+                        splashColor: Colors.green,
+                        child: Container(
+                          width: double.infinity,
+                          height: 40.0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0, vertical: 7.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Review Plans for $currDayStr',
+                                  style: AppStyles.defaultFont
+                                      .copyWith(fontSize: AppFontSizes.body),
                                 ),
-                                !thisDayHas
-                                    ? const FittedBox(
-                                        child:
-                                            Icon(Icons.check_box_outline_blank))
-                                    : const FittedBox(
-                                        child: Icon(Icons.check_box_outlined)),
-                              ],
-                            ),
+                              ),
+                              !thisDayHas
+                                  ? const FittedBox(
+                                      child:
+                                          Icon(Icons.check_box_outline_blank))
+                                  : const FittedBox(
+                                      child: Icon(Icons.check_box_outlined)),
+                            ],
                           ),
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-              _checklist(),
-            ],
-          ),
-        ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            Expanded(child: _checklist()),
+          ],
+        )),
       ],
     );
   }
@@ -258,20 +245,28 @@ class _OverviewPageState extends State<OverviewPage>
             }
             return false;
           });
-
-          return ListView.builder(
-              shrinkWrap: true,
-              itemCount: routines.length,
-              itemBuilder: (context, index) {
-                return _routineItem(routines.elementAt(index),
-                    isCheckList: true);
-              });
+          String routineComplete = "${controller.checkList.length}/${controller.routineList.length}";
+          return Column(
+            children: [
+              Text(routineComplete),
+              Expanded(
+                child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.only(bottom: 30.0),
+                    itemCount: routines.length,
+                    itemBuilder: (context, index) {
+                      return _routineItem(routines.elementAt(index),
+                          isCheckList: true);
+                    }),
+              ),
+            ],
+          );
         });
   }
 
   Widget _createRoutineButton(context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
       child: Center(
         child: Material(
           color: StateContainer.of(context)!.currTheme.darkButton,
@@ -400,13 +395,8 @@ class _OverviewPageState extends State<OverviewPage>
     return Column(
       children: [
         Text(title),
-        ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: routines.length,
-            itemBuilder: (context, index) {
-              return _routineItem(routines.elementAt(index));
-            }),
+        for(int i = 0; i < routines.length; i++)
+          _routineItem(routines.elementAt(i))
       ],
     );
   }
@@ -430,8 +420,7 @@ class _OverviewPageState extends State<OverviewPage>
               return _routineItem(routine);
             }).toList(),
           */
-          return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+          return ListView(
               children: [
                 _routineGroup(daily, "Daily"),
                 _routineGroup(weekly, "Weekly"),

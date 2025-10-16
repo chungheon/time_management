@@ -16,6 +16,7 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
   final ViewController _viewController = Get.find<ViewController>();
   final GoalsController _goalsController = Get.find<GoalsController>();
   final Function()? update;
+  final RxInt addDate = RxInt(0);
   @override
   Size get preferredSize => const Size.fromHeight(80.0);
   @override
@@ -23,6 +24,7 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
     return GestureDetector(
       onTap: (){
         update?.call();
+        addDate.value += 1;
       },
       child: GetBuilder(
         init: _viewController,
@@ -42,18 +44,22 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          DateFormat('dd/MM/yy')
-                              .format(_viewController.currDate.value!),
-                          style: AppStyles.dateHeader(context),
+                        Obx(
+                        ()=> Text(
+                            DateFormat('dd/MM/yy')
+                                .format(_viewController.currDate.value!.add( Duration(days: addDate.value))),
+                            style: AppStyles.dateHeader(context),
+                          ),
                         ),
                         const SizedBox(
                           width: 2.0,
                         ),
-                        Text(
-                          DateTimeConstants.days[DateTimeHelpers.getDayValue(
-                              _viewController.currDate.value!)],
-                          style: AppStyles.subDateHeader(context),
+                        Obx(
+                          ()=> Text(
+                            DateTimeConstants.days[DateTimeHelpers.getDayValue(
+                                _viewController.currDate.value!.add( Duration(days: addDate.value)))],
+                            style: AppStyles.subDateHeader(context),
+                          ),
                         ),
                       ],
                     ),

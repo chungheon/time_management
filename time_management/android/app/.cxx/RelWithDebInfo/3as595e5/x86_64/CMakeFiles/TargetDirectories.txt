@@ -1,0 +1,2 @@
+E:/Github/Time Management/time_management/android/app/.cxx/RelWithDebInfo/3as595e5/x86_64/CMakeFiles/edit_cache.dir
+E:/Github/Time Management/time_management/android/app/.cxx/RelWithDebInfo/3as595e5/x86_64/CMakeFiles/rebuild_cache.dir

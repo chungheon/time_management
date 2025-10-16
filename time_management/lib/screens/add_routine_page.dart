@@ -256,7 +256,7 @@ class AddRoutinePage extends StatelessWidget {
         endDateRange: endDateRange,
         onChanged: (String rDate) {
           reminderDate.value = DateTimeHelpers.tryParse(rDate);
-          print("Changed Date " + reminderDate.value.toString());
+          print("Changed Date ${reminderDate.value}");
         },
       ),
     );
@@ -282,7 +282,7 @@ class AddRoutinePage extends StatelessWidget {
           endDateRange: endDateRange,
           onChanged: (String routineDate) {
             date.value = DateTimeHelpers.tryParse(routineDate);
-            print("Changed Date " + date.value.toString());
+            print("Changed Date ${date.value}");
           },
         ),
         const SizedBox(
@@ -385,7 +385,7 @@ class AddRoutinePage extends StatelessWidget {
                 height: 40.0,
                 width: 40.0,
                 margin: const EdgeInsets.only(left: 5.0),
-                child: FittedBox(child: Icon(Icons.list_alt_outlined))))
+                child: const FittedBox(child: Icon(Icons.list_alt_outlined))))
       ]),
     );
   }

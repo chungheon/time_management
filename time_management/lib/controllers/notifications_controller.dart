@@ -174,8 +174,6 @@ class NotificationsController extends GetxController {
             channelDescription: channelData,
           ),
         ),
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,
         matchDateTimeComponents: schedule,

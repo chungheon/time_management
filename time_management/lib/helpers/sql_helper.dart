@@ -1,4 +1,5 @@
 import 'package:time_management/constants/sql_constants.dart';
+import 'package:time_management/helpers/date_time_helpers.dart';
 
 class SQLHelper {
   static String insertStmt(String tableName, Map<String, dynamic> colVals) {
@@ -139,8 +140,10 @@ class SQLHelper {
   }
 
   static String selectOverDueTasks(int startDate) {
+    int prevDate = startDate - 86400000;
     return "SELECT * FROM ${SQLConstants.taskTable} " +
-        "WHERE ${SQLConstants.colTaskActionDate} < $startDate AND (${SQLConstants.colTaskStatus} = 0  OR ${SQLConstants.colTaskStatus} = 1)";
+        "WHERE ${SQLConstants.colTaskActionDate} < $startDate AND ${SQLConstants.colTaskActionDate} >= $prevDate " + 
+        " AND (${SQLConstants.colTaskStatus} = 0  OR ${SQLConstants.colTaskStatus} = 1)";
   }
 
   static String selectTaskByWithoutDate() {
