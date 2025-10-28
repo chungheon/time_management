@@ -213,7 +213,7 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
     });
     return PopScope(
       canPop: false,
-      onPopInvoked: (pop) async {
+      onPopInvokedWithResult: (pop, _) async {
         if (!pop) {
           if (_showTaskList.value) {
             _showTaskList.value = !_showTaskList.value;

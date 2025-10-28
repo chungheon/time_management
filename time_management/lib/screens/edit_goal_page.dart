@@ -48,7 +48,7 @@ class EditGoalPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvoked: (pop) {
+      onPopInvokedWithResult: (pop, _) {
         if (!pop) {
           showDialog(
               context: context,

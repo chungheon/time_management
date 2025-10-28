@@ -138,7 +138,7 @@ class AddDocumentPage extends StatelessWidget {
     scrollController.addListener(onScrollListener);
     return PopScope(
       canPop: false,
-      onPopInvoked: (pop) {
+      onPopInvokedWithResult: (pop, _) {
         if (!pop) {
           showDialog(
               context: context,

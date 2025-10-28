@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
+
 import 'package:time_management/constants/sql_constants.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 
@@ -121,6 +123,15 @@ class SQLHelper {
 
   static String selectAllTasksStmt(int goalUid) {
     return "SELECT * FROM ${SQLConstants.taskTable} WHERE ${SQLConstants.colTaskGoalId} = $goalUid";
+  }
+
+  static String selectTasksWithinDate(int goalUid, int startDate, {int? endDate}) {
+    String selectStmt = "SELECT * FROM ${SQLConstants.taskTable} WHERE ${SQLConstants.colTaskGoalId} = $goalUid " + 
+    "AND (${SQLConstants.colTaskActionDate} IS NULL OR (${SQLConstants.colTaskActionDate} >= $startDate ";
+    if(endDate == null){
+      return selectStmt + "))";
+    }
+    return selectStmt + " AND ${SQLConstants.colTaskActionDate} <= $endDate))";
   }
 
   static String selectTaskById(int taskUid) {

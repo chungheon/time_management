@@ -57,7 +57,9 @@ class GoalsController extends GetxController {
   }
 
   Future<List<Task>> fetchAllTasks(Goal goal) async {
-    var stmt = SQLHelper.selectAllTasksStmt(goal.uid!);
+    var now = DateTime.now().dateOnly();
+    var beforeNow = now.subtract(const Duration(days: 14)).millisecondsSinceEpoch;
+    var stmt = SQLHelper.selectTasksWithinDate(goal.uid!, beforeNow);
     List<Map<String, Object?>>? tasks = await _sqlController.rawQuery(stmt);
     return tasks?.map<Task>((e) {
           Task task = Task.fromSQFLITEMap(e);

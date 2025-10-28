@@ -836,8 +836,10 @@ class _GoalsPageState extends State<GoalsPage>
                     "To Do",
                     style: AppStyles.defaultFont.copyWith(fontSize: 14.0),
                   ),
-                  Text("Completed",
-                      style: AppStyles.defaultFont.copyWith(fontSize: 14.0)),
+                  FittedBox(
+                    child: Text("Completed",
+                        style: AppStyles.defaultFont.copyWith(fontSize: 14.0)),
+                  ),
                   Text("Overdue",
                       style: AppStyles.defaultFont.copyWith(fontSize: 14.0)),
                   GetBuilder(
@@ -847,8 +849,7 @@ class _GoalsPageState extends State<GoalsPage>
                         child: Text(
                             "${controller.goalList[_goalViewController.currentGoal.value].documents.length}\nDocuments",
                             textAlign: TextAlign.center,
-                            style:
-                                AppStyles.defaultFont),
+                            style: AppStyles.defaultFont),
                       );
                     },
                   ),
@@ -868,7 +869,7 @@ class _GoalsPageState extends State<GoalsPage>
                                       .millisecondsSinceEpoch))
                       .toList()),
                   _completedList(completedTasksList),
-                  _todoList(tasks
+                  _todoList(tasks.reversed
                       .where((element) =>
                           element.status != TaskStatus.completed &&
                           element.actionDate != null &&
