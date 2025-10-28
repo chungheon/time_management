@@ -411,12 +411,15 @@ class GoalsController extends GetxController {
     int? creation;
     bool result = await _sqlController.transaction((txn) async {
       try {
-        var taskId = await txn.insert(
-          newTask.objTable(),
-          newTask.toMapSQFLITE(),
-        );
-        await txn.rawQuery(SQLHelper.linkDocToTaskStmt(
-            docs.map<int>((e) => e.uid!).toList(), taskId));
+        int? taskId =
+            await _sqlController.transactionInsertObject(txn, newTask);
+        if (taskId == null) {
+          throw Exception("Failed to create task");
+        }
+        if (docs.isNotEmpty) {
+          await txn.rawQuery(SQLHelper.linkDocToTaskStmt(
+              docs.map<int>((e) => e.uid!).toList(), taskId));
+        }
         creation = taskId;
       } on Exception {
         rethrow;

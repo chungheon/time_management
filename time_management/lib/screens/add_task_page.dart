@@ -88,8 +88,8 @@ class AddTaskPage extends StatelessWidget {
         if (!newDocuments.contains(doc)) {
           newDocuments.add(doc);
         }
-        Get.back();
       }
+      Get.back();
     };
   }
 

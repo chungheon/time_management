@@ -475,7 +475,6 @@ class _GoalsPageState extends State<GoalsPage>
                                                   goal.uid ?? -1,
                                                 );
                                                 if (result ?? false) {
-                                                  print("reset");
                                                   _goalsController
                                                       .refreshPlanList();
                                                   _goalsController

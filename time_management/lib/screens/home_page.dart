@@ -133,7 +133,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               children: [
                 TaskListPage(),
                 const GoalsPage(),
-                OverviewPage(),
+                const OverviewPage(),
               ],
             ),
           ),
