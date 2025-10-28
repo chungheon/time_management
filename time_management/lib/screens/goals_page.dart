@@ -230,7 +230,7 @@ class _GoalsPageState extends State<GoalsPage>
       }
     });
 
-    _listTabController = TabController(length: 3, vsync: this);
+    _listTabController = TabController(length: 4, vsync: this);
     _listTabController.addListener(() {
       _editIndex.value = _listTabController.index;
       selectedTasks.clear();
