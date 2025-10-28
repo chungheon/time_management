@@ -7,6 +7,7 @@ import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/document_model.dart';
 import 'package:time_management/models/goal_model.dart';
+import 'package:time_management/models/task_model.dart';
 import 'package:time_management/styles.dart';
 import 'package:time_management/widgets/auto_complete_goals_input.dart';
 import 'package:time_management/widgets/contact_document_widget.dart';
@@ -42,6 +43,7 @@ class AddTaskPage extends StatelessWidget {
   final RxBool _showLinkDocuments = false.obs;
   final RxList<Document> newDocuments = RxList<Document>();
   final RxBool _hideAdded = false.obs;
+  final TextEditingController _taskInputController = TextEditingController();
 
   Future<void> onTapAddTask() async {
     Get.off(() => LoadingPageWidget(
@@ -51,6 +53,7 @@ class AddTaskPage extends StatelessWidget {
               selectedGoal.value!.uid!,
               DateTimeHelpers.tryParse(_startDateInput.value)
                   ?.millisecondsSinceEpoch,
+              newDocuments.toList(),
             );
             Goal selGoal = _goalsController.goalList.firstWhere(
               (element) {
@@ -77,6 +80,59 @@ class AddTaskPage extends StatelessWidget {
     FocusManager.instance.primaryFocus?.unfocus();
   }
 
+  Function() onTapTemplate(Task task) {
+    return () {
+      _taskInputController.text = task.task ?? '';
+      _taskInput.value = _taskInputController.text;
+      for (var doc in task.documents) {
+        if (!newDocuments.contains(doc)) {
+          newDocuments.add(doc);
+        }
+        Get.back();
+      }
+    };
+  }
+
+  Future<void> onTapViewTemplates(context) async {
+    List<Task> uniqueList = [];
+    List<String> uniqueTasks = [];
+    selectedGoal.value?.tasks.forEach((element) {
+      if (element.task != null && !uniqueTasks.contains(element.task)) {
+        uniqueList.add(element);
+        uniqueTasks.add(element.task!);
+      }
+    });
+    showDialog(
+        context: context,
+        builder: (diagContext) {
+          return Dialog(
+            child: Container(
+              height: 300.0,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("List of Templates:"),
+                  Expanded(
+                    child: ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: uniqueList.length,
+                      itemBuilder: (context, index) {
+                        return _templateItem(uniqueList.elementAt(index),
+                            onTapTemplate(uniqueList.elementAt(index)));
+                      },
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -93,6 +149,16 @@ class AddTaskPage extends StatelessWidget {
         appBar: PageHeaderWidget(
           title: 'Add Task',
           exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
+          additionalAction: [
+            InkWell(
+              child: const Material(
+                child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Icon(Icons.copy)),
+              ),
+              onTap: () => onTapViewTemplates(context),
+            ),
+          ],
         ),
         body: Stack(
           children: [
@@ -115,6 +181,7 @@ class AddTaskPage extends StatelessWidget {
                         ),
                       ),
                       InputTextField(
+                        textController: _taskInputController,
                         title: 'Task',
                         hintText: 'What needs to be done?',
                         maxLines: 5,
@@ -226,9 +293,7 @@ class AddTaskPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.0),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8.0),
-                      onTap: () {
-                        onTapAddTask();
-                      },
+                      onTap: onTapAddTask,
                       splashColor:
                           StateContainer.of(context)?.currTheme.splashEffect,
                       child: Container(
@@ -248,6 +313,29 @@ class AddTaskPage extends StatelessWidget {
             ),
             _linkDocumentSheet(context),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _templateItem(Task? task, Function() onTap) {
+    if (task == null) {
+      return Container();
+    }
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 5.0),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [EffectConstants.shadowEffectDown(Get.context)]),
+        child: Center(
+          child: Text(
+            task?.task ?? "",
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ),
     );

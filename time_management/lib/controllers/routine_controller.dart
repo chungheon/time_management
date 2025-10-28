@@ -58,8 +58,8 @@ class RoutineController extends GetxController {
       return;
     }
     DateTime now = DateTime.now().add(const Duration(days: 1));
-    goalsController.createTask(
-        routine.desc ?? "", 1, now.millisecondsSinceEpoch);
+    goalsController
+        .createTask(routine.desc ?? "", 1, now.millisecondsSinceEpoch, []);
     goalsController.refreshList();
     goalsController.update();
   }

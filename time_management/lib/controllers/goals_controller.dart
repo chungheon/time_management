@@ -58,7 +58,8 @@ class GoalsController extends GetxController {
 
   Future<List<Task>> fetchAllTasks(Goal goal) async {
     var now = DateTime.now().dateOnly();
-    var beforeNow = now.subtract(const Duration(days: 14)).millisecondsSinceEpoch;
+    var beforeNow =
+        now.subtract(const Duration(days: 14)).millisecondsSinceEpoch;
     var stmt = SQLHelper.selectTasksWithinDate(goal.uid!, beforeNow);
     List<Map<String, Object?>>? tasks = await _sqlController.rawQuery(stmt);
     return tasks?.map<Task>((e) {
@@ -403,16 +404,26 @@ class GoalsController extends GetxController {
     String task,
     int goalUid,
     int? actionDate,
+    List<Document> docs,
   ) async {
-    int? newTaskUid = await _sqlController.insertObject(Task(
-      uid: -1,
-      goalTaskId: goalUid,
-      task: task,
-      actionDate: actionDate,
-      status: TaskStatus.upcoming,
-    ));
+    Task newTask =
+        Task(goalTaskId: goalUid, task: task, actionDate: actionDate);
+    int? creation;
+    bool result = await _sqlController.transaction((txn) async {
+      try {
+        var taskId = await txn.insert(
+          newTask.objTable(),
+          newTask.toMapSQFLITE(),
+        );
+        await txn.rawQuery(SQLHelper.linkDocToTaskStmt(
+            docs.map<int>((e) => e.uid!).toList(), taskId));
+        creation = taskId;
+      } on Exception {
+        rethrow;
+      }
+    });
 
-    return newTaskUid;
+    return creation;
   }
 
   Future<List<Task>> fetchTasksByDate(int? date) async {

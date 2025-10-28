@@ -70,4 +70,10 @@ class Document with SQFLiteObject {
     return 'Document{${SQLConstants.colDocId}: $uid, ${SQLConstants.colDocGoalId}: $goalUid,' +
         ' ${SQLConstants.colDocType}: $type, ${SQLConstants.colDocPath}: $path, ${SQLConstants.colDocDesc}: $desc, linked: $linked}';
   }
+
+  @override
+  bool operator ==(Object other){
+    if (identical(this, other)) return true; 
+    return other is Document && other.uid == uid;
+  }  
 }
