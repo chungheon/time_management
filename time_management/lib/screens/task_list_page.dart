@@ -16,6 +16,7 @@ import 'package:time_management/screens/add_task_page.dart';
 import 'package:time_management/screens/document_view_page.dart';
 import 'package:time_management/screens/edit_task_page.dart';
 import 'package:time_management/styles.dart';
+import 'package:time_management/widgets/loading_page_widget.dart';
 
 class TaskListPage extends StatelessWidget {
   final RxString result = "".obs;
@@ -90,15 +91,26 @@ class TaskListPage extends StatelessWidget {
                   Get.to(() => AddTaskPage(
                         returnRoute: currRoute,
                         onCreateComplete: (taskUid) {
-                          int now =
-                              DateTime.now().dateOnly().millisecondsSinceEpoch;
-                          print(_goalsController.dayPlansList[now]);
-                          if (taskUid != null &&
-                              (_goalsController.dayPlansList[now] ?? [])
-                                  .isNotEmpty) {
-                            _goalsController.addDayPlanItem(taskUid);
-                            _goalsController.refreshPlanList();
-                          }
+                          Get.to(() => LoadingPageWidget(
+                                onComplete: (_) async {
+                                  Get.until(
+                                    (route) => route.settings.name == currRoute,
+                                  );
+                                },
+                                asyncFunc: () async {
+                                  int now = DateTime.now()
+                                      .dateOnly()
+                                      .millisecondsSinceEpoch;
+                                  if (taskUid != null &&
+                                      (_goalsController.dayPlansList[now] ?? [])
+                                          .isNotEmpty) {
+                                    await _goalsController.addDayPlanItem(taskUid);
+                                    await _goalsController.refreshPlanList();
+                                    _goalsController.update();
+                                  }
+                                  return;
+                                },
+                              ));
                         },
                       ));
                 },

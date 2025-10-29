@@ -499,7 +499,7 @@ class GoalsController extends GetxController {
     DayPlanItem newItem = DayPlanItem(
       date: now,
       taskId: taskUid,
-      taskPriority: TaskPriority.niceToHave,
+      taskPriority: TaskPriority.mustDo,
       task: await fetchTaskById(taskUid),
     );
     if (dayPlansList[now] == null) {
