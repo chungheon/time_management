@@ -28,6 +28,7 @@ import 'package:time_management/widgets/confirmation_dialog.dart';
 import 'package:time_management/widgets/document_widget.dart';
 import 'package:time_management/widgets/goal_move_dialog.dart';
 import 'package:time_management/widgets/loading_page_widget.dart';
+import 'package:time_management/widgets/task_view_calendar.dart';
 import 'package:time_management/widgets/text_document_widget.dart';
 import 'package:time_management/widgets/video_document_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,6 +57,8 @@ class _GoalsPageState extends State<GoalsPage>
   final RxBool isEditing = false.obs;
   final RxList<int> selectedTasks = RxList<int>();
   final RxInt _editIndex = 0.obs;
+  final RxBool _calendarView = true.obs;
+  final RxInt _selectedDateView = 0.obs;
   double prevPos = 0;
 
   @override
@@ -103,6 +106,10 @@ class _GoalsPageState extends State<GoalsPage>
             _goalsController.update();
           },
         ));
+  }
+
+  Future<void> onTapViewChange() async {
+    _calendarView.value = !_calendarView.value;
   }
 
   Future<void> onTapEdit() async {
@@ -191,6 +198,7 @@ class _GoalsPageState extends State<GoalsPage>
           _hideSearch.value = false;
         });
         _goalsController.update();
+        _selectedDateView.value = 0;
       }
     });
     _scrollController.addListener(() {
@@ -313,10 +321,30 @@ class _GoalsPageState extends State<GoalsPage>
                           Column(
                             children: [
                               _goalsCarouselWidget(context),
-                              SizedBox(
-                                height: constraints.maxHeight,
-                                child: _goalTasksWidget(context),
-                              ),
+                              Obx(() {
+                                if (!_calendarView.value) {
+                                  return SizedBox(
+                                    height: constraints.maxHeight,
+                                    child: _goalTasksWidget(context),
+                                  );
+                                }
+
+                                return GetBuilder(
+                                  init: _goalsController,
+                                  builder: (controller) {
+                                    var tasks = _goalsController
+                                        .goalList[_goalViewController
+                                            .currentGoal.value]
+                                        .tasks;
+                                    return SizedBox(
+                                        height: constraints.maxHeight,
+                                        child: TaskViewCalendarWidget(
+                                          tasks: tasks,
+                                          selected: _selectedDateView,
+                                        ));
+                                  },
+                                );
+                              }),
                             ],
                           ),
                         ],
@@ -658,6 +686,34 @@ class _GoalsPageState extends State<GoalsPage>
       right: 20.0,
       child: Row(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: Material(
+              elevation: 4.0,
+              color: StateContainer.of(context)?.currTheme.button,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onTapViewChange,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  height: 50.0,
+                  width: 50.0,
+                  padding: const EdgeInsets.all(6.0),
+                  decoration: const BoxDecoration(
+                    color: Colors.transparent,
+                  ),
+                  child: FittedBox(
+                      child: Text(
+                    "View",
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    style: AppStyles.defaultFont
+                        .copyWith(fontWeight: FontWeight.bold),
+                  )),
+                ),
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(6.0),
             child: Material(
