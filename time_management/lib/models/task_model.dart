@@ -7,6 +7,7 @@
 //Missing number of times tasked pushed back
 //On Completion Linked Tasks (To flag it out to user these tasks were waiting for task to be completed)
 
+import 'package:flutter/material.dart';
 import 'package:time_management/constants/sql_constants.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/document_model.dart';
@@ -28,6 +29,7 @@ class Task with SQFLiteObject {
     this.actionDate,
     this.status,
     this.completionDate,
+    this.alertTime,
     List<Tag>? tags,
     List<String>? docs,
     this.goal,
@@ -42,6 +44,7 @@ class Task with SQFLiteObject {
   int? actionDate;
   TaskStatus? status;
   int? completionDate;
+  int? alertTime;
   List<Tag> tags = [];
   List<Document> documents = [];
   Goal? goal;
@@ -55,6 +58,7 @@ class Task with SQFLiteObject {
     int? rActionDate = queryResult[SQLConstants.colTaskActionDate] as int?;
     int? rGoalTaskId = queryResult[SQLConstants.colTaskGoalId] as int?;
     int? rCompDate = queryResult[SQLConstants.colTaskCompletionDate] as int?;
+    int? alertTime = queryResult[SQLConstants.colTaskAlertTime] as int?;
     return Task(
       uid: rUid,
       task: rTask,
@@ -62,6 +66,7 @@ class Task with SQFLiteObject {
       actionDate: rActionDate,
       goalTaskId: rGoalTaskId,
       completionDate: rCompDate,
+      alertTime: alertTime,
     );
   }
 
@@ -111,11 +116,13 @@ class Task with SQFLiteObject {
     int? rActionDate = queryResult[SQLConstants.colTaskActionDate] as int?;
     int? rGoalTaskId = queryResult[SQLConstants.colTaskGoalId] as int?;
     int? rCompDate = queryResult[SQLConstants.colTaskCompletionDate] as int?;
+    int? rAlertTime = queryResult[SQLConstants.colTaskAlertTime] as int?;
     task = rTask;
     status = rStatus;
     actionDate = rActionDate;
     goalTaskId = rGoalTaskId;
     completionDate = rCompDate;
+    alertTime = rAlertTime;
   }
 
   @override
@@ -127,6 +134,7 @@ class Task with SQFLiteObject {
         SQLConstants.colTaskActionDate: actionDate,
         SQLConstants.colTaskGoalId: goalTaskId,
         SQLConstants.colTaskCompletionDate: completionDate,
+        SQLConstants.colTaskAlertTime: alertTime,
       };
     }
     return {
@@ -136,6 +144,7 @@ class Task with SQFLiteObject {
       SQLConstants.colTaskActionDate: actionDate,
       SQLConstants.colTaskGoalId: goalTaskId,
       SQLConstants.colTaskCompletionDate: completionDate,
+      SQLConstants.colTaskAlertTime: alertTime,
     };
   }
 
@@ -149,6 +158,7 @@ class Task with SQFLiteObject {
     return 'Task{${SQLConstants.colTaskId}: $uid, ${SQLConstants.colTaskTask}: $task, ' +
         '${SQLConstants.colTaskActionDate}: ${DateTimeHelpers.getDateStr(actionDate)},' +
         ' ${SQLConstants.colTaskCompletionDate}:${DateTimeHelpers.getDateStr(completionDate)}}' +
-        '${SQLConstants.colTaskStatus} : $status, ${SQLConstants.colTaskGoalId} : $goalTaskId, tags:$tags, ';
+        '${SQLConstants.colTaskStatus} : $status, ${SQLConstants.colTaskGoalId} : $goalTaskId,${SQLConstants.colTaskAlertTime} : $alertTime,' +
+        'tags:$tags, ';
   }
 }

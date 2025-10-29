@@ -318,7 +318,7 @@ class _OverviewPageState extends State<OverviewPage>
               asyncFunc: () async {
                 try {
                   await _routineController.deleteRoutine(
-                      _notificationsController, routine);
+                      _notificationsController, _goalsController, routine);
                 } on Exception catch (e) {
                   //TODO: show fail
                 }

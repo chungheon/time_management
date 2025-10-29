@@ -253,7 +253,6 @@ class AddRoutinePage extends StatelessWidget {
         endDateRange: endDateRange,
         onChanged: (String rDate) {
           reminderDate.value = DateTimeHelpers.tryParse(rDate);
-          print("Changed Date ${reminderDate.value}");
         },
       ),
     );

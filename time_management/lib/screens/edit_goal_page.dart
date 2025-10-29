@@ -68,6 +68,7 @@ class EditGoalPage extends StatelessWidget {
                       asyncFunc: () async {
                         try {
                           await _goalsController.deleteGoal(goal);
+                          await _goalsController.refreshList();
                           _goalViewController.currentGoal.value -= 1;
                           _goalsController.update();
                         } on Exception {
