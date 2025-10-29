@@ -148,10 +148,44 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
     }
   }
 
+  void onTapCreateTask() {
+    var currentRoute = Get.currentRoute;
+    Get.to(() => AddTaskPage(
+          returnRoute: currentRoute,
+          onCreateComplete: (taskUid) async {
+            await Get.to(
+              () => LoadingPageWidget(
+                msg: 'Creating Task',
+                onComplete: (_) async {
+                  Get.until((route) {
+                    return route.settings.name == currentRoute;
+                  });
+                },
+                asyncFunc: () async {
+                  await refereshOverdueTasks();
+                  await fetchDayListTasks(refresh: true);
+                  if (taskUid != null) {
+                    Task? taskCreated =
+                        (await _goalsController.fetchTaskById(taskUid));
+                    _selectedTasks.add(DayPlanItem(
+                        task: taskCreated,
+                        taskId: taskCreated?.uid,
+                        taskPriority: TaskPriority.mustDo,
+                        date: widget.planDate.millisecondsSinceEpoch));
+                  }
+                  return;
+                },
+              ),
+            );
+          },
+        ));
+  }
+
   void onCreateTap() {
     if (_selectedTasks.isEmpty) {
       return;
     }
+    print(_selectedTasks.value);
     Get.off(() => LoadingPageWidget(
           asyncFunc: () async {
             if (widget.dayList == null) {
@@ -160,8 +194,6 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
                 await _goalsController.updatePlanList(
                     _goalsController.dayPlansList,
                     planDate: widget.planDate.millisecondsSinceEpoch);
-
-                print(_goalsController.dayPlansList);
                 _goalsController.update();
               } on Exception {
                 //TODO:on create plan fails
@@ -175,7 +207,7 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
                     planDate: widget.planDate.millisecondsSinceEpoch);
                 _goalsController.update();
               } on Exception {
-                //TODO:on create plan fails
+                //TODO:on update plan fails
               }
             }
 
@@ -651,27 +683,7 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {
-                        var currentRoute = Get.currentRoute;
-                        Get.to(() => AddTaskPage(
-                              returnRoute: currentRoute,
-                              onCreateComplete: (taskUid) async {
-                                refereshOverdueTasks();
-                                fetchDayListTasks(refresh: true);
-                                if (taskUid != null) {
-                                  Task? taskCreated = (await _goalsController
-                                      .fetchTaskById(taskUid));
-                                  _selectedTasks.add(DayPlanItem(
-                                      task: taskCreated,
-                                      taskId: taskCreated?.uid,
-                                      taskPriority: TaskPriority.mustDo,
-                                      date: taskCreated?.actionDate ??
-                                          widget.planDate
-                                              .millisecondsSinceEpoch));
-                                }
-                              },
-                            ));
-                      },
+                      onTap: onTapCreateTask,
                       child: Container(
                         height: 40.0,
                         width: 40.0,

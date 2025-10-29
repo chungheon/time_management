@@ -425,8 +425,11 @@ class GoalsController extends GetxController {
     int? actionDate,
     List<Document> docs,
   ) async {
-    Task newTask =
-        Task(goalTaskId: goalUid, task: task, actionDate: actionDate);
+    Task newTask = Task(
+        goalTaskId: goalUid,
+        task: task,
+        actionDate: actionDate,
+        status: TaskStatus.upcoming);
     int? creation;
     bool result = await _sqlController.transaction((txn) async {
       try {

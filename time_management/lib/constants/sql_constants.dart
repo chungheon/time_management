@@ -9,9 +9,9 @@ class SQLConstants {
   static const List<List<String>> upgrades = [
     [
       'ALTER TABLE ' +
-          SQLConstants.taskTable +
+          taskTable +
           ' ADD COLUMN ' +
-          SQLConstants.colTaskAlertTime +
+          colTaskAlertTime +
           ' INTEGER'
     ]
   ];
@@ -71,6 +71,7 @@ class SQLConstants {
           '$colTaskStatus INTEGER,' +
           '$colTaskGoalId INTEGER,' +
           '$colTaskCompletionDate INTEGER,' +
+          '$colTaskAlertTime INTEGER,' +
           'CONSTRAINT $taskFKGoal ' +
           'FOREIGN KEY ($colTaskGoalId) ' +
           'REFERENCES $goalTable($colGoalId)' +
