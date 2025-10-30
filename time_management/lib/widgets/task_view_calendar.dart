@@ -15,13 +15,15 @@ class TaskViewCalendarWidget extends StatelessWidget {
   }) {
     DateTime dateNow = DateTime.now().dateOnly();
     int now = dateNow.millisecondsSinceEpoch;
+    _unscheduledList.value =
+        tasks.where((e) => (e.actionDate == null)).toList();
     _overdueList.value =
         tasks.where((e) => (e.actionDate ?? now) < now).toList();
     _completedList.value = tasks
         .where((e) => (e.status ?? TaskStatus.ongoing) == TaskStatus.completed)
         .toList();
     for (int i = 0; i < 14; i++) {
-      dayTasksList[i] = [];
+      _dayTasksList[i] = [];
     }
     for (var task in tasks) {
       if (task.actionDate != null) {
@@ -29,32 +31,25 @@ class TaskViewCalendarWidget extends StatelessWidget {
             .dateOnly()
             .difference(dateNow)
             .inDays;
-        if (dayTasksList[dateDiff] == null) {
-          dayTasksList[dateDiff] = [task];
+        if (_dayTasksList[dateDiff] == null) {
+          _dayTasksList[dateDiff] = [task];
         } else {
-          dayTasksList[dateDiff]!.add(task);
+          _dayTasksList[dateDiff]!.add(task);
         }
       }
     }
     switch (selected.value) {
       case -1:
         _tasksList.value = _overdueList;
+        break;
       case -2:
         _tasksList.value = _unscheduledList;
+        break;
       default:
-        _tasksList.value = tasks
-            .where((e) =>
-                e.actionDate != null &&
-                e.actionDate! ==
-                    dateNow
-                        .add(Duration(days: selected.value))
-                        .millisecondsSinceEpoch &&
-                (e.status ?? TaskStatus.completed) != TaskStatus.completed)
-            .toList();
+        _tasksList.value = _dayTasksList[selected.value] ?? [];
     }
-    print(selected.value);
   }
-  final RxMap<int, List<Task>> dayTasksList = RxMap<int, List<Task>>();
+  final RxMap<int, List<Task>> _dayTasksList = RxMap<int, List<Task>>();
   final RxList<Task> _tasksList = RxList<Task>();
   final RxList<Task> _overdueList = RxList<Task>();
   final RxList<Task> _completedList = RxList<Task>();
@@ -84,7 +79,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
                             const SizedBox(
                               width: 20.0,
                             ),
-                            ...dayTasksList
+                            ..._dayTasksList
                                 .map<int, Widget>((key, value) {
                                   return MapEntry(key,
                                       _dayTasksListItem(context, key, value));
@@ -253,7 +248,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
           shadowColor: StateContainer.of(context)?.currTheme.shadowElevation,
           child: InkWell(
             onTap: () {
-              _tasksList.value = dayTasksList[difference] ?? [];
+              _tasksList.value = _dayTasksList[difference] ?? [];
               selected.value = difference;
             },
             borderRadius: BorderRadius.circular(15.0),

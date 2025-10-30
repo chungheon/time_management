@@ -15,6 +15,7 @@ import 'package:time_management/models/task_model.dart';
 import 'package:time_management/screens/add_task_page.dart';
 import 'package:time_management/screens/document_view_page.dart';
 import 'package:time_management/screens/edit_task_page.dart';
+import 'package:time_management/screens/focus_page.dart';
 import 'package:time_management/styles.dart';
 import 'package:time_management/widgets/loading_page_widget.dart';
 
@@ -24,6 +25,7 @@ class TaskListPage extends StatelessWidget {
   final RxBool isUpdating = false.obs;
   final Rx<Timer> timer = Timer(Duration.zero, () {}).obs;
   final RxInt timerCountdown = 0.obs;
+  final RxList<Task> _selectedTasks = RxList<Task>();
 
   TaskListPage({super.key});
 
@@ -81,55 +83,107 @@ class TaskListPage extends StatelessWidget {
           Positioned(
             bottom: 20.0,
             right: 20.0,
-            child: Material(
-              color: StateContainer.of(context)?.currTheme.button,
-              shape: const CircleBorder(),
-              elevation: 4.0,
-              child: InkWell(
-                onTap: () {
-                  var currRoute = Get.currentRoute;
-                  Get.to(() => AddTaskPage(
-                        returnRoute: currRoute,
-                        onCreateComplete: (taskUid) {
-                          Get.to(() => LoadingPageWidget(
-                                onComplete: (_) async {
-                                  Get.until(
-                                    (route) => route.settings.name == currRoute,
-                                  );
-                                },
-                                asyncFunc: () async {
-                                  int now = DateTime.now()
-                                      .dateOnly()
-                                      .millisecondsSinceEpoch;
-                                  if (taskUid != null &&
-                                      (_goalsController.dayPlansList[now] ?? [])
-                                          .isNotEmpty) {
-                                    await _goalsController.addDayPlanItem(taskUid);
-                                    await _goalsController.refreshPlanList();
-                                    _goalsController.update();
-                                  }
-                                  return;
-                                },
-                              ));
-                        },
-                      ));
-                },
-                customBorder: const CircleBorder(),
-                child: Container(
-                  height: 50.0,
-                  width: 50.0,
-                  padding: const EdgeInsets.only(
-                      left: 11.0, right: 8.0, top: 10.0, bottom: 8.0),
-                  decoration: const BoxDecoration(
-                    color: Colors.transparent,
+            child: Obx(
+              () => Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _selectedTasks.isEmpty
+                      ? Container()
+                      : Material(
+                          color: StateContainer.of(context)?.currTheme.button,
+                          shape: const CircleBorder(),
+                          elevation: 4.0,
+                          child: InkWell(
+                            onTap: () {
+                              var currRoute = Get.currentRoute;
+                              Get.to(() => FocusPage(
+                                    task: _selectedTasks,
+                                    returnRoute: currRoute,
+                                  ));
+                            },
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              height: 50.0,
+                              width: 50.0,
+                              padding: const EdgeInsets.only(
+                                  left: 11.0,
+                                  right: 8.0,
+                                  top: 10.0,
+                                  bottom: 8.0),
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                              ),
+                              child: FittedBox(
+                                child: Icon(
+                                  Icons.bookmark,
+                                  color: StateContainer.of(context)
+                                      ?.currTheme
+                                      .text,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                  const SizedBox(
+                    width: 10.0,
                   ),
-                  child: FittedBox(
-                    child: Icon(
-                      AppIcons.add_tasks,
-                      color: StateContainer.of(context)?.currTheme.text,
+                  Material(
+                    color: StateContainer.of(context)?.currTheme.button,
+                    shape: const CircleBorder(),
+                    elevation: 4.0,
+                    child: InkWell(
+                      onTap: () {
+                        var currRoute = Get.currentRoute;
+                        Get.to(() => AddTaskPage(
+                              returnRoute: currRoute,
+                              onCreateComplete: (taskUid) {
+                                Get.to(() => LoadingPageWidget(
+                                      onComplete: (_) async {
+                                        Get.until(
+                                          (route) =>
+                                              route.settings.name == currRoute,
+                                        );
+                                      },
+                                      asyncFunc: () async {
+                                        int now = DateTime.now()
+                                            .dateOnly()
+                                            .millisecondsSinceEpoch;
+                                        if (taskUid != null &&
+                                            (_goalsController
+                                                        .dayPlansList[now] ??
+                                                    [])
+                                                .isNotEmpty) {
+                                          await _goalsController
+                                              .addDayPlanItem(taskUid);
+                                          await _goalsController
+                                              .refreshPlanList();
+                                          _goalsController.update();
+                                        }
+                                        return;
+                                      },
+                                    ));
+                              },
+                            ));
+                      },
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        height: 50.0,
+                        width: 50.0,
+                        padding: const EdgeInsets.only(
+                            left: 11.0, right: 8.0, top: 10.0, bottom: 8.0),
+                        decoration: const BoxDecoration(
+                          color: Colors.transparent,
+                        ),
+                        child: FittedBox(
+                          child: Icon(
+                            AppIcons.add_tasks,
+                            color: StateContainer.of(context)?.currTheme.text,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -138,13 +192,32 @@ class TaskListPage extends StatelessWidget {
     );
   }
 
-  Widget _dayPlanListItem(DayPlanItem dayItem, int index, context) {
+  Widget _dayPlanListItem(
+    DayPlanItem dayItem,
+    int index,
+    context,
+  ) {
     Task task = dayItem.task ?? Task();
     String startDate = DateTimeHelpers.getFormattedDate(
       DateTime.fromMillisecondsSinceEpoch(task.actionDate ?? 0),
       dateFormat: ('dd/MM'),
     );
+    bool selected = false;
+    for (var t in _selectedTasks) {
+      if ((t.uid ?? -1) == (task.uid ?? -2)) {
+        selected = true;
+        break;
+      }
+    }
     return GestureDetector(
+      onTap: () {
+        if (selected) {
+          _selectedTasks.removeWhere((e) => e.uid == task.uid);
+        } else {
+          _selectedTasks.add(task);
+        }
+        _goalsController.update();
+      },
       onLongPress: () {
         Get.to(() => EditTaskPage(
               task: task,
@@ -189,18 +262,20 @@ class TaskListPage extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10.0),
         decoration: BoxDecoration(
-            color: StateContainer.of(context)?.currTheme.background,
-            borderRadius: BorderRadius.circular(15.0),
-            boxShadow: [
-              EffectConstants.shadowEffectDown(context),
-            ]),
+          color: StateContainer.of(context)?.currTheme.background,
+          borderRadius: BorderRadius.circular(15.0),
+          boxShadow: [
+            EffectConstants.shadowEffectDown(context),
+          ],
+          border: selected ? Border.all(width: 1.0, color: Colors.black) : null,
+        ),
         child: Container(
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
             color: StateContainer.of(context)
                 ?.currTheme
                 .priorityColors[task.status?.index ?? 0]
-                .withOpacity(0.1),
+                .withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(15.0),
           ),
           child: Column(

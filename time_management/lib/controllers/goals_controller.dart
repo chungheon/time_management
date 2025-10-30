@@ -340,10 +340,17 @@ class GoalsController extends GetxController {
         uid: task.uid,
         goalTaskId: goalId ?? task.goalTaskId,
         task: taskStr ?? task.task,
-        actionDate: actionDate == 0 ? null : actionDate,
+        actionDate: actionDate == null
+            ? task.actionDate
+            : actionDate == 0
+                ? null
+                : actionDate,
         status: status ?? task.status,
-        completionDate:
-            completionDate == 0 ? null : completionDate ?? task.completionDate,
+        completionDate: completionDate == null
+            ? task.completionDate
+            : completionDate == 0
+                ? null
+                : completionDate,
         alertTime: time == 0
             ? null
             : (alertTime == null
@@ -353,9 +360,12 @@ class GoalsController extends GetxController {
                     .millisecondsSinceEpoch));
     List<int> diffUids = List.empty();
     if (docList != null) {
-      List<int> currUids = task.documents.map<int>((e) => e.uid ?? -1).toList();
-      if (currUids.length != docList.length) {
-        diffUids = currUids.toSet().difference(docList.toSet()).toList();
+      if (task.goalTaskId == goalId) {
+        List<int> currUids =
+            task.documents.map<int>((e) => e.uid ?? -1).toList();
+        if (currUids.length != docList.length) {
+          diffUids = currUids.toSet().difference(docList.toSet()).toList();
+        }
       }
     }
     bool result = await _sqlController.transaction((txn) async {
