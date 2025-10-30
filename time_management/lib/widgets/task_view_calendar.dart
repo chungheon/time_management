@@ -3,8 +3,12 @@ import 'package:get/get.dart';
 import 'package:time_management/app_state_container.dart';
 import 'package:time_management/constants/date_time_constants.dart';
 import 'package:time_management/constants/effect_constants.dart';
+import 'package:time_management/constants/string_constants.dart';
+import 'package:time_management/controllers/goal_view_controller.dart';
+import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/task_model.dart';
+import 'package:time_management/screens/edit_task_page.dart';
 import 'package:time_management/styles.dart';
 
 class TaskViewCalendarWidget extends StatelessWidget {
@@ -15,10 +19,14 @@ class TaskViewCalendarWidget extends StatelessWidget {
   }) {
     DateTime dateNow = DateTime.now().dateOnly();
     int now = dateNow.millisecondsSinceEpoch;
-    _unscheduledList.value =
-        tasks.where((e) => (e.actionDate == null)).toList();
-    _overdueList.value =
-        tasks.where((e) => (e.actionDate ?? now) < now).toList();
+    _unscheduledList.value = tasks
+        .where(
+            (e) => (e.actionDate == null) && (e.status != TaskStatus.completed))
+        .toList();
+    _overdueList.value = tasks
+        .where((e) =>
+            ((e.actionDate ?? now) < now) && (e.status != TaskStatus.completed))
+        .toList();
     _completedList.value = tasks
         .where((e) => (e.status ?? TaskStatus.ongoing) == TaskStatus.completed)
         .toList();
@@ -45,10 +53,15 @@ class TaskViewCalendarWidget extends StatelessWidget {
       case -2:
         _tasksList.value = _unscheduledList;
         break;
+      case -3:
+        _tasksList.value = _completedList;
+        break;
       default:
         _tasksList.value = _dayTasksList[selected.value] ?? [];
     }
   }
+  final GoalsController _goalsController = Get.find();
+  final GoalViewController _goalViewController = Get.find();
   final RxMap<int, List<Task>> _dayTasksList = RxMap<int, List<Task>>();
   final RxList<Task> _tasksList = RxList<Task>();
   final RxList<Task> _overdueList = RxList<Task>();
@@ -115,7 +128,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
                                 child: Row(
                                   children: [
                                     Text(
-                                      'Overdue',
+                                      'Due',
                                       style: AppStyles.defaultFont.copyWith(
                                           fontSize: AppFontSizes.paragraph),
                                     ),
@@ -126,7 +139,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
                                       fit: FlexFit.tight,
                                       child: Obx(() {
                                         return Text(
-                                          '${_overdueList.length} Tasks',
+                                          '${_overdueList.length}',
                                           overflow: TextOverflow.ellipsis,
                                           style: AppStyles.defaultFont.copyWith(
                                               fontSize: AppFontSizes.paragraph),
@@ -161,7 +174,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
                                 child: Row(
                                   children: [
                                     Text(
-                                      'Unscheduled',
+                                      'Unschdl',
                                       style: AppStyles.defaultFont.copyWith(
                                           fontSize: AppFontSizes.paragraph),
                                     ),
@@ -172,7 +185,54 @@ class TaskViewCalendarWidget extends StatelessWidget {
                                       fit: FlexFit.tight,
                                       child: Obx(() {
                                         return Text(
-                                          '${_unscheduledList.length} Tasks',
+                                          '${_unscheduledList.length}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: AppStyles.defaultFont.copyWith(
+                                              fontSize: AppFontSizes.paragraph),
+                                        );
+                                      }),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 10.0,
+                        ),
+                        Flexible(
+                          child: Material(
+                            color: StateContainer.of(context)?.currTheme.button,
+                            borderRadius: BorderRadius.circular(7.0),
+                            elevation: 4.0,
+                            child: InkWell(
+                              onTap: () {
+                                _tasksList.value = _completedList;
+                                selected.value = -3;
+                              },
+                              borderRadius: BorderRadius.circular(7.0),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10.0, vertical: 10.0),
+                                decoration: const BoxDecoration(
+                                    color: Colors.transparent),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      'Compl',
+                                      style: AppStyles.defaultFont.copyWith(
+                                          fontSize: AppFontSizes.paragraph),
+                                    ),
+                                    const SizedBox(
+                                      width: 5.0,
+                                    ),
+                                    Flexible(
+                                      fit: FlexFit.tight,
+                                      child: Obx(() {
+                                        return Text(
+                                          '${_completedList.length}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: AppStyles.defaultFont.copyWith(
@@ -335,75 +395,123 @@ class TaskViewCalendarWidget extends StatelessWidget {
             DateTime.fromMillisecondsSinceEpoch(task.actionDate!),
             dateFormat: ('dd/MM'),
           );
-    return Container(
-      padding: const EdgeInsets.all(12.0),
-      margin: const EdgeInsets.only(bottom: 12.0),
-      decoration: BoxDecoration(
-        color: StateContainer.of(context)?.currTheme.background,
-        borderRadius: BorderRadius.circular(15.0),
-        boxShadow: [
-          EffectConstants.shadowEffectDown(context),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 18.0,
-                  clipBehavior: Clip.none,
-                  child: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          (task.goal?.name ?? ''),
-                          overflow: TextOverflow.ellipsis,
-                          style: AppStyles.defaultFont.copyWith(
-                            fontSize: AppFontSizes.footNote,
-                            fontStyle: FontStyle.italic,
-                            color:
-                                StateContainer.of(context)?.currTheme.hintText,
+    return GestureDetector(
+      onLongPress: () {
+        Get.to(() => EditTaskPage(
+              task: task,
+            ));
+      },
+      onDoubleTap: () async {
+        if (!_goalViewController.isUpdating.value) {
+          _goalViewController.isUpdating.value = true;
+          TaskStatus taskStatus =
+              TaskStatus.values[((task.status?.index ?? 0) + 1) % 3];
+          try {
+            if (await _goalsController.editTask(task, status: taskStatus)) {
+              task.status = taskStatus;
+            }
+          } finally {
+            _goalsController.update();
+            _goalViewController.isUpdating.value = false;
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        margin: const EdgeInsets.only(bottom: 12.0),
+        decoration: BoxDecoration(
+          color: StateContainer.of(context)?.currTheme.background,
+          borderRadius: BorderRadius.circular(15.0),
+          boxShadow: [
+            EffectConstants.shadowEffectDown(context),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 18.0,
+                    clipBehavior: Clip.none,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            (task.goal?.name ?? ''),
+                            overflow: TextOverflow.ellipsis,
+                            style: AppStyles.defaultFont.copyWith(
+                              fontSize: AppFontSizes.footNote,
+                              fontStyle: FontStyle.italic,
+                              color: StateContainer.of(context)
+                                  ?.currTheme
+                                  .hintText,
+                            ),
                           ),
                         ),
-                      ),
-                      Container(
-                        height: 3.0,
-                        width: 3.0,
-                        margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                        decoration: BoxDecoration(
-                          color: StateContainer.of(context)?.currTheme.hintText,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      Flexible(
-                        child: Text(
-                          startDate,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppStyles.defaultFont.copyWith(
-                            fontSize: AppFontSizes.footNote,
-                            fontStyle: FontStyle.italic,
+                        Container(
+                          height: 3.0,
+                          width: 3.0,
+                          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                          decoration: BoxDecoration(
                             color:
                                 StateContainer.of(context)?.currTheme.hintText,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                      ),
-                    ],
+                        Flexible(
+                          child: Text(
+                            startDate,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppStyles.defaultFont.copyWith(
+                              fontSize: AppFontSizes.footNote,
+                              fontStyle: FontStyle.italic,
+                              color: StateContainer.of(context)
+                                  ?.currTheme
+                                  .hintText,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          height: 3.0,
+                          width: 3.0,
+                          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                          decoration: BoxDecoration(
+                            color:
+                                StateContainer.of(context)?.currTheme.hintText,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            StringConstants.taskStatus[task.status?.index ?? 0],
+                            overflow: TextOverflow.ellipsis,
+                            style: AppStyles.defaultFont.copyWith(
+                              fontSize: AppFontSizes.footNote,
+                              fontStyle: FontStyle.italic,
+                              color: StateContainer.of(context)
+                                  ?.currTheme
+                                  .hintText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Text(
-                  (task.task ?? ''),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppStyles.defaultFont.copyWith(
-                      fontSize: AppFontSizes.body,
-                      decoration: TextDecoration.underline),
-                ),
-              ],
+                  Text(
+                    (task.task ?? ''),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppStyles.defaultFont.copyWith(
+                        fontSize: AppFontSizes.body,
+                        decoration: TextDecoration.underline),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

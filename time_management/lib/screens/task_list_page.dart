@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:time_management/app_icons.dart';
 import 'package:time_management/app_state_container.dart';
 import 'package:time_management/constants/date_time_constants.dart';
 import 'package:time_management/constants/effect_constants.dart';
 import 'package:time_management/constants/string_constants.dart';
+import 'package:time_management/controllers/goal_view_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
@@ -22,7 +22,7 @@ import 'package:time_management/widgets/loading_page_widget.dart';
 class TaskListPage extends StatelessWidget {
   final RxString result = "".obs;
   final GoalsController _goalsController = Get.find();
-  final RxBool isUpdating = false.obs;
+  final GoalViewController _goalViewController = Get.find();
   final Rx<Timer> timer = Timer(Duration.zero, () {}).obs;
   final RxInt timerCountdown = 0.obs;
   final RxList<Task> _selectedTasks = RxList<Task>();
@@ -224,15 +224,18 @@ class TaskListPage extends StatelessWidget {
             ));
       },
       onDoubleTap: () async {
-        if (!isUpdating.value) {
-          isUpdating.value = true;
+        if (!_goalViewController.isUpdating.value) {
+          _goalViewController.isUpdating.value = true;
           TaskStatus taskStatus =
               TaskStatus.values[((task.status?.index ?? 0) + 1) % 3];
-          if (await _goalsController.editTask(task, status: taskStatus)) {
-            task.status = taskStatus;
+          try {
+            if (await _goalsController.editTask(task, status: taskStatus)) {
+              task.status = taskStatus;
+            }
+          } finally {
+            _goalsController.update();
+            _goalViewController.isUpdating.value = false;
           }
-          _goalsController.update();
-          isUpdating.value = false;
           if (!timer.value.isActive) {
             timer.value =
                 Timer.periodic(const Duration(milliseconds: 500), (timer) {
@@ -244,14 +247,6 @@ class TaskListPage extends StatelessWidget {
                 _goalsController.dayPlansList[now]
                     ?.sort(DayPlanItem.prioritySort);
                 _goalsController.update();
-                Fluttertoast.cancel();
-                Fluttertoast.showToast(
-                    msg: "Updated", toastLength: Toast.LENGTH_SHORT);
-              } else if (timerCountdown.value % 2 == 1) {
-                Fluttertoast.cancel();
-                Fluttertoast.showToast(
-                    msg: ((timerCountdown / 2).floor() + 1).toString(),
-                    toastLength: Toast.LENGTH_SHORT);
               }
             });
           } else {
@@ -275,7 +270,7 @@ class TaskListPage extends StatelessWidget {
             color: StateContainer.of(context)
                 ?.currTheme
                 .priorityColors[task.status?.index ?? 0]
-                .withValues(alpha:0.1),
+                .withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(15.0),
           ),
           child: Column(

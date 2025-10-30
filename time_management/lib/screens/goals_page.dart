@@ -54,11 +54,7 @@ class _GoalsPageState extends State<GoalsPage>
   final RxBool _hideSearch = false.obs;
   final RxBool _hideTitle = true.obs;
   final int _scrollOffset = 40;
-  final RxBool isEditing = false.obs;
-  final RxList<int> selectedTasks = RxList<int>();
-  final RxInt _editIndex = 0.obs;
-  final RxBool _calendarView = true.obs;
-  final RxInt _selectedDateView = 0.obs;
+
   double prevPos = 0;
 
   @override
@@ -74,7 +70,7 @@ class _GoalsPageState extends State<GoalsPage>
   }
 
   Future<void> onLongPressTask(Task task) async {
-    if (isEditing.value) {
+    if (_goalViewController.isEditing.value) {
       return;
     }
 
@@ -109,16 +105,18 @@ class _GoalsPageState extends State<GoalsPage>
   }
 
   Future<void> onTapViewChange() async {
-    _calendarView.value = !_calendarView.value;
+    _goalViewController.calendarView.value =
+        !_goalViewController.calendarView.value;
+    _goalViewController.editSelectedTasks.clear();
   }
 
   Future<void> onTapEdit() async {
-    isEditing.value = true;
+    _goalViewController.isEditing.value = true;
   }
 
   Future<void> onCancelEdit() async {
-    selectedTasks.clear();
-    isEditing.value = false;
+    _goalViewController.editSelectedTasks.clear();
+    _goalViewController.isEditing.value = false;
   }
 
   Future<void> onDoubleTapGoal() async {
@@ -132,7 +130,7 @@ class _GoalsPageState extends State<GoalsPage>
     showDialog(
         context: context,
         builder: (dialogContext) {
-          if (selectedTasks.isEmpty) {
+          if (_goalViewController.editSelectedTasks.isEmpty) {
             return ConfirmationDialog(
               message: "Please select atleast 1 task",
               onConfirm: () async {
@@ -148,7 +146,8 @@ class _GoalsPageState extends State<GoalsPage>
             onConfirm: (int goalUid) {
               Get.to(() => LoadingPageWidget(
                     asyncFunc: () async {
-                      for (var taskId in selectedTasks) {
+                      for (var taskId
+                          in _goalViewController.editSelectedTasks) {
                         await _goalsController.moveTaskFromGoal(
                             taskId, goalUid);
                       }
@@ -165,7 +164,7 @@ class _GoalsPageState extends State<GoalsPage>
                     },
                     onComplete: (_) {
                       Get.until((route) => route.settings.name == currRoute);
-                      selectedTasks.clear();
+                      _goalViewController.editSelectedTasks.clear();
                     },
                   ));
             },
@@ -198,7 +197,7 @@ class _GoalsPageState extends State<GoalsPage>
           _hideSearch.value = false;
         });
         _goalsController.update();
-        _selectedDateView.value = 0;
+        _goalViewController.selectedDateView.value = 0;
       }
     });
     _scrollController.addListener(() {
@@ -230,8 +229,8 @@ class _GoalsPageState extends State<GoalsPage>
     _goalViewController.currentGoal.listen((goalIndex) {
       _goalsController.goalList[goalIndex].tasks.sort(Task.prioritySort);
       _goalsController.update();
-      selectedTasks.clear();
-      isEditing.value = false;
+      _goalViewController.editSelectedTasks.clear();
+      _goalViewController.isEditing.value = false;
       double pos = _pageController.page ?? 0;
       if (pos.round() != _goalViewController.currentGoal.value) {
         _pageController.jumpToPage(goalIndex);
@@ -240,8 +239,8 @@ class _GoalsPageState extends State<GoalsPage>
 
     _listTabController = TabController(length: 4, vsync: this);
     _listTabController.addListener(() {
-      _editIndex.value = _listTabController.index;
-      selectedTasks.clear();
+      _goalViewController.editIndex.value = _listTabController.index;
+      _goalViewController.editSelectedTasks.clear();
     });
   }
 
@@ -322,7 +321,7 @@ class _GoalsPageState extends State<GoalsPage>
                             children: [
                               _goalsCarouselWidget(context),
                               Obx(() {
-                                if (!_calendarView.value) {
+                                if (!_goalViewController.calendarView.value) {
                                   return SizedBox(
                                     height: constraints.maxHeight,
                                     child: _goalTasksWidget(context),
@@ -340,7 +339,8 @@ class _GoalsPageState extends State<GoalsPage>
                                         height: constraints.maxHeight,
                                         child: TaskViewCalendarWidget(
                                           tasks: tasks,
-                                          selected: _selectedDateView,
+                                          selected: _goalViewController
+                                              .selectedDateView,
                                         ));
                                   },
                                 );
@@ -356,10 +356,10 @@ class _GoalsPageState extends State<GoalsPage>
             ],
           ),
           Obx(() {
-            if (!isEditing.value) {
+            if (!_goalViewController.isEditing.value) {
               return _footerBar(context);
             } else {
-              if (_editIndex.value <= 1) {
+              if (_goalViewController.editIndex.value <= 2) {
                 return _editBottomBar(context);
               } else {
                 return _editDocumentBar(context);
@@ -426,21 +426,31 @@ class _GoalsPageState extends State<GoalsPage>
                   shape: const CircleBorder(),
                   child: InkWell(
                     onTap: () {
-                      if (_listTabController.index == 1 ||
-                          _listTabController.index == 0) {
-                        if (selectedTasks.isNotEmpty) {
-                          selectedTasks.clear();
+                      if (_listTabController.index <= 2) {
+                        if (_goalViewController.editSelectedTasks.isNotEmpty) {
+                          _goalViewController.editSelectedTasks.clear();
                         } else {
-                          selectedTasks.addAll(_goalsController
-                              .goalList[_goalViewController.currentGoal.value]
-                              .tasks
-                              .where((e) {
+                          int now =
+                              DateTime.now().dateOnly().millisecondsSinceEpoch;
+                          _goalViewController.editSelectedTasks.addAll(
+                              _goalsController
+                                  .goalList[
+                                      _goalViewController.currentGoal.value]
+                                  .tasks
+                                  .where((e) {
                             switch (_listTabController.index) {
                               case 0:
-                                return e.status == TaskStatus.upcoming ||
-                                    e.status == TaskStatus.ongoing;
+                                return (e.status == TaskStatus.upcoming ||
+                                        e.status == TaskStatus.ongoing) &&
+                                    (e.actionDate != null &&
+                                        e.actionDate! >= now);
                               case 1:
                                 return e.status == TaskStatus.completed;
+                              case 2:
+                                return (e.status == TaskStatus.ongoing ||
+                                        e.status == TaskStatus.upcoming) &&
+                                    (e.actionDate != null &&
+                                        e.actionDate! < now);
                               default:
                                 return false;
                             }
@@ -457,7 +467,7 @@ class _GoalsPageState extends State<GoalsPage>
                       child: FittedBox(
                         child: Obx(
                           () => Text(
-                            selectedTasks.isNotEmpty
+                            _goalViewController.editSelectedTasks.isNotEmpty
                                 ? "Unselect"
                                 : "Select\nAll",
                             maxLines: 2,
@@ -472,7 +482,7 @@ class _GoalsPageState extends State<GoalsPage>
                 ),
               ),
             ),
-            _editIndex.value != 1
+            _goalViewController.editIndex.value != 1
                 ? Container()
                 : Expanded(
                     child: Container(
@@ -499,7 +509,8 @@ class _GoalsPageState extends State<GoalsPage>
                                                 bool? result =
                                                     await _goalsController
                                                         .archiveTask(
-                                                  selectedTasks,
+                                                  _goalViewController
+                                                      .editSelectedTasks,
                                                   goal.uid ?? -1,
                                                 );
                                                 if (result ?? false) {
@@ -516,8 +527,11 @@ class _GoalsPageState extends State<GoalsPage>
                                               return;
                                             },
                                             onComplete: (_) async {
-                                              selectedTasks.clear();
-                                              isEditing.value = false;
+                                              _goalViewController
+                                                  .editSelectedTasks
+                                                  .clear();
+                                              _goalViewController
+                                                  .isEditing.value = false;
                                               Get.until(
                                                   (route) => route.isFirst);
                                             },
@@ -566,7 +580,8 @@ class _GoalsPageState extends State<GoalsPage>
                                         try {
                                           bool result = await _goalsController
                                               .deleteTasksFromGoal(
-                                                  selectedTasks,
+                                                  _goalViewController
+                                                      .editSelectedTasks,
                                                   _goalsController
                                                           .goalList[
                                                               _goalViewController
@@ -585,8 +600,10 @@ class _GoalsPageState extends State<GoalsPage>
                                         return;
                                       },
                                       onComplete: (_) {
-                                        selectedTasks.clear();
-                                        isEditing.value = false;
+                                        _goalViewController.editSelectedTasks
+                                            .clear();
+                                        _goalViewController.isEditing.value =
+                                            false;
                                         Get.until((route) => route.isFirst);
                                       },
                                     ));
@@ -802,7 +819,8 @@ class _GoalsPageState extends State<GoalsPage>
     );
   }
 
-  Widget _taskStatsWidget(int ongoing, int upcoming, int completed) {
+  Widget _taskStatsWidget(
+      int ongoing, int upcoming, int completed, int overdue) {
     return Row(
       children: [
         Text(
@@ -835,6 +853,19 @@ class _GoalsPageState extends State<GoalsPage>
           '$completed completed',
           style: AppStyles.dateMetaHeader(context),
         ),
+        Container(
+          height: 3.0,
+          width: 3.0,
+          margin: const EdgeInsets.symmetric(horizontal: 5.0),
+          decoration: BoxDecoration(
+            color: StateContainer.of(context)?.currTheme.text,
+            shape: BoxShape.circle,
+          ),
+        ),
+        Text(
+          '$overdue overdue',
+          style: AppStyles.dateMetaHeader(context),
+        ),
       ],
     );
   }
@@ -849,13 +880,22 @@ class _GoalsPageState extends State<GoalsPage>
           return task.status == TaskStatus.completed ||
               task.status == TaskStatus.archive;
         });
+        int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
         var upcomingTasks = tasks.where((task) {
-          return task.status == TaskStatus.upcoming;
-        }).length;
+          return task.status == TaskStatus.upcoming &&
+              (task.actionDate == null || task.actionDate! >= now);
+        });
         var ongoingTasks = tasks.where((task) {
-          return task.status == TaskStatus.ongoing;
-        }).length;
-        var completedTasks = completedTasksList.length;
+          return task.status == TaskStatus.ongoing &&
+              (task.actionDate == null || task.actionDate! >= now);
+        });
+        var overdueTasks = tasks.reversed
+            .where((element) =>
+                element.status != TaskStatus.completed &&
+                element.actionDate != null &&
+                element.actionDate! <
+                    DateTime.now().dateOnly().millisecondsSinceEpoch)
+            .toList();
         return Column(
           children: [
             Padding(
@@ -863,12 +903,14 @@ class _GoalsPageState extends State<GoalsPage>
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20.0),
                 child: Obx(() {
-                  if (isEditing.value) {
+                  if (_goalViewController.isEditing.value) {
                     int selectedCompleted = completedTasksList
-                        .where((task) => selectedTasks.contains(task.uid ?? -2))
+                        .where((task) => _goalViewController.editSelectedTasks
+                            .contains(task.uid ?? -2))
                         .length;
                     int selectedIncompleted =
-                        selectedTasks.length - selectedCompleted;
+                        _goalViewController.editSelectedTasks.length -
+                            selectedCompleted;
                     return Align(
                       alignment: Alignment.topLeft,
                       child: Text(
@@ -878,7 +920,10 @@ class _GoalsPageState extends State<GoalsPage>
                     );
                   }
                   return _taskStatsWidget(
-                      ongoingTasks, upcomingTasks, completedTasks);
+                      ongoingTasks.length,
+                      upcomingTasks.length,
+                      completedTasksList.length,
+                      overdueTasks.length);
                 }),
               ),
             ),
@@ -914,23 +959,9 @@ class _GoalsPageState extends State<GoalsPage>
                 controller: _listTabController,
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _todoList(tasks
-                      .where((element) =>
-                          element.status != TaskStatus.completed &&
-                          (element.actionDate == null ||
-                              element.actionDate! >=
-                                  DateTime.now()
-                                      .dateOnly()
-                                      .millisecondsSinceEpoch))
-                      .toList()),
+                  _todoList(upcomingTasks.toList()..addAll(ongoingTasks)),
                   _completedList(completedTasksList),
-                  _todoList(tasks.reversed
-                      .where((element) =>
-                          element.status != TaskStatus.completed &&
-                          element.actionDate != null &&
-                          element.actionDate! <
-                              DateTime.now().dateOnly().millisecondsSinceEpoch)
-                      .toList()),
+                  _todoList(overdueTasks, reversed: true),
                   _documentList(
                     _goalsController
                         .goalList[_goalViewController.currentGoal.value]
@@ -975,13 +1006,14 @@ class _GoalsPageState extends State<GoalsPage>
   }
 
   Widget _completedList(Iterable<Task> completedTasks) {
+    var comTasks = completedTasks.toList()..sort(Task.prioritySort);
     return ListView.builder(
       physics: const ClampingScrollPhysics(),
       controller: _taskScrollController,
       padding: EdgeInsets.only(bottom: 20.0 + _scrollOffset, top: 10.0),
       itemCount: completedTasks.length + 1,
       itemBuilder: (context, index) {
-        if (index == completedTasks.length) {
+        if (index == comTasks.length) {
           return Container(
             margin: const EdgeInsets.only(top: 10.0),
             height: 20.0,
@@ -993,7 +1025,7 @@ class _GoalsPageState extends State<GoalsPage>
             ),
           );
         }
-        Task task = completedTasks.elementAt(completedTasks.length - 1 - index);
+        Task task = comTasks.elementAt(index);
         Color bgColor = ColorHelpers.generateColor();
         while (ColorHelpers.checkDarkColor(bgColor)) {
           bgColor = ColorHelpers.generateColor();
@@ -1003,7 +1035,8 @@ class _GoalsPageState extends State<GoalsPage>
     );
   }
 
-  Widget _todoList(List<Task> toDoTasks) {
+  Widget _todoList(List<Task> toDoTasks, {bool reversed = false}) {
+    toDoTasks.sort(Task.prioritySort);
     return ListView.builder(
       physics: const ClampingScrollPhysics(),
       controller: _taskScrollController,
@@ -1024,7 +1057,7 @@ class _GoalsPageState extends State<GoalsPage>
             ),
           );
         }
-        Task task = toDoTasks[index];
+        Task task = toDoTasks[reversed ? toDoTasks.length - index - 1 : index];
         Color bgColor = ColorHelpers.generateColor();
         while (ColorHelpers.checkDarkColor(bgColor)) {
           bgColor = ColorHelpers.generateColor();
@@ -1198,7 +1231,8 @@ class _GoalsPageState extends State<GoalsPage>
             return Container(
               margin: const EdgeInsets.symmetric(vertical: 3.0),
               decoration: BoxDecoration(
-                color: selectedTasks.contains(task.uid ?? -2)
+                color: _goalViewController.editSelectedTasks
+                        .contains(task.uid ?? -2)
                     ? Colors.amberAccent
                     : StateContainer.of(context)?.currTheme.textBackground,
               ),
@@ -1211,23 +1245,31 @@ class _GoalsPageState extends State<GoalsPage>
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
-                if (isEditing.value) {
-                  var index = selectedTasks
+                if (_goalViewController.isEditing.value) {
+                  var index = _goalViewController.editSelectedTasks
                       .indexWhere((element) => element == (task.uid ?? -2));
                   if (index != -1) {
-                    selectedTasks.removeAt(index);
+                    _goalViewController.editSelectedTasks.removeAt(index);
                   } else {
-                    selectedTasks.add(task.uid ?? -1);
+                    _goalViewController.editSelectedTasks.add(task.uid ?? -1);
                   }
                 }
               },
               onDoubleTap: () async {
-                TaskStatus taskStatus =
-                    TaskStatus.values[((task.status?.index ?? 0) + 1) % 3];
-                if (await _goalsController.editTask(task, status: taskStatus)) {
-                  task.status = taskStatus;
+                if (!_goalViewController.isUpdating.value) {
+                  _goalViewController.isUpdating.value = true;
+                  TaskStatus taskStatus =
+                      TaskStatus.values[((task.status?.index ?? 0) + 1) % 3];
+                  try {
+                    if (await _goalsController.editTask(task,
+                        status: taskStatus)) {
+                      task.status = taskStatus;
+                    }
+                  } finally {
+                    _goalsController.update();
+                    _goalViewController.isUpdating.value = false;
+                  }
                 }
-                _goalsController.update();
               },
               onLongPress: () => onLongPressTask(task),
               splashColor: StateContainer.of(context)?.currTheme.lightText,
@@ -1373,7 +1415,7 @@ class _GoalsPageState extends State<GoalsPage>
   }
 
   String _upcomingTask(Goal goal) {
-    DateTime now = DateTime.now().subtract(const Duration(days: 1));
+    DateTime now = DateTime.now().dateOnly();
 
     Task earliestTask = goal.tasks.firstWhere((element) {
       return element.actionDate != null &&
@@ -1391,8 +1433,10 @@ class _GoalsPageState extends State<GoalsPage>
       if (earliestTask.actionDate! < now.millisecondsSinceEpoch) {
         return 'Task overdue on $nextDate';
       }
-
-      return 'Next Tasks starts $nextDate';
+      if (earliestTask.actionDate! == now.millisecondsSinceEpoch) {
+        return 'Next Task starts Today!';
+      }
+      return 'Next Task starts $nextDate';
     }
   }
 
