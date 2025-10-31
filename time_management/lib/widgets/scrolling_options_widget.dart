@@ -4,18 +4,20 @@ import 'package:time_management/styles.dart';
 
 class ScrollingOptionsWidget extends StatelessWidget {
   ScrollingOptionsWidget(
-      {super.key, required this.options, this.onChanged, this.initialValue});
+      {super.key, required this.options, this.onChanged, this.initialValue, PageController? controller}){
+        pageController.value = controller ?? PageController();
+      }
   final List<String> options;
   final Function(int)? onChanged;
   final int? initialValue;
-  final PageController pageController = PageController();
+  final Rx<PageController> pageController = PageController().obs;
   final RxInt currOption = 0.obs;
   static const itemHeight = 50.0;
 
   void onPageChange() {
-    if (pageController.page != null &&
-        pageController.page!.round() != currOption.value) {
-      currOption.value = pageController.page!.round();
+    if (pageController.value.page != null &&
+        pageController.value.page!.round() != currOption.value) {
+      currOption.value = pageController.value.page!.round();
       onChanged?.call(currOption.value);
     }
   }
@@ -24,14 +26,14 @@ class ScrollingOptionsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     if (initialValue != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        pageController.jumpToPage(initialValue!);
+        pageController.value.jumpToPage(initialValue!);
       });
-      pageController.addListener(onPageChange);
+      pageController.value.addListener(onPageChange);
     }
     return SizedBox(
       height: itemHeight,
       child: PageView.builder(
-        controller: pageController,
+        controller: pageController.value,
         itemCount: options.length,
         scrollDirection: Axis.vertical,
         itemBuilder: (context, index) {

@@ -25,7 +25,7 @@ class TaskListPage extends StatelessWidget {
   final GoalViewController _goalViewController = Get.find();
   final Rx<Timer> timer = Timer(Duration.zero, () {}).obs;
   final RxInt timerCountdown = 0.obs;
-  final RxList<Task> _selectedTasks = RxList<Task>();
+  final RxList<DayPlanItem> _selectedTasks = RxList<DayPlanItem>();
 
   TaskListPage({super.key});
 
@@ -97,7 +97,7 @@ class TaskListPage extends StatelessWidget {
                             onTap: () {
                               var currRoute = Get.currentRoute;
                               Get.to(() => FocusPage(
-                                    task: _selectedTasks,
+                                    dayPlanItems: _selectedTasks,
                                     returnRoute: currRoute,
                                   ));
                             },
@@ -204,7 +204,8 @@ class TaskListPage extends StatelessWidget {
     );
     bool selected = false;
     for (var t in _selectedTasks) {
-      if ((t.uid ?? -1) == (task.uid ?? -2)) {
+      print(t.toString());
+      if ((t.task?.uid ?? -1) == (task.uid ?? -2)) {
         selected = true;
         break;
       }
@@ -212,9 +213,10 @@ class TaskListPage extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         if (selected) {
-          _selectedTasks.removeWhere((e) => e.uid == task.uid);
+          _selectedTasks.removeWhere(
+              (e) => (e.task?.uid ?? -1) == (dayItem.task?.uid ?? -2));
         } else {
-          _selectedTasks.add(task);
+          _selectedTasks.add(dayItem);
         }
         _goalsController.update();
       },
