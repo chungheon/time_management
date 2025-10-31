@@ -151,7 +151,8 @@ class AddDocumentPage extends StatelessWidget {
         backgroundColor: StateContainer.of(context)?.currTheme.background,
         appBar: PageHeaderWidget(
           title: "Add Documents",
-          exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
+          returnRoute: returnRoute,
+          // exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
         ),
         body: Column(
           children: [

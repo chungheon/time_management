@@ -60,7 +60,8 @@ class EditGoalPage extends StatelessWidget {
         backgroundColor: StateContainer.of(context)?.currTheme.background,
         appBar: PageHeaderWidget(
           title: 'Edit Goal',
-          exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
+          returnRoute: returnRoute,
+          // exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
           additionalAction: [
             InkWell(
               onTap: () {

@@ -263,8 +263,9 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
         resizeToAvoidBottomInset: false,
         appBar: PageHeaderWidget(
           title: '${dateStr()} Plan',
-          exitDialog:
-              DialogConstants.exitDialog(returnRoute: widget.returnRoute),
+          returnRoute: widget.returnRoute,
+          // exitDialog:
+          //     DialogConstants.exitDialog(returnRoute: widget.returnRoute),
         ),
         body: Stack(
           fit: StackFit.passthrough,

@@ -10,11 +10,13 @@ class ConfirmationDialog extends StatelessWidget {
     this.confirmTitle,
     this.cancelTitle,
     this.onConfirm,
+    this.onCancelled,
   });
   final String? message;
   final String? confirmTitle;
   final String? cancelTitle;
   final Future<void> Function()? onConfirm;
+  final Future<void> Function()? onCancelled;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +51,7 @@ class ConfirmationDialog extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () {
                         FocusManager.instance.primaryFocus?.unfocus();
+                        onCancelled?.call();
                         Get.back();
                       },
                       child: Container(

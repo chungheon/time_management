@@ -125,7 +125,8 @@ class EditTaskPage extends StatelessWidget {
       child: Scaffold(
         appBar: PageHeaderWidget(
           title: 'Update Task',
-          exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
+          returnRoute: returnRoute,
+          // exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
         ),
         body: Stack(
           children: [

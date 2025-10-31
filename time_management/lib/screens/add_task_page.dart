@@ -148,7 +148,8 @@ class AddTaskPage extends StatelessWidget {
       child: Scaffold(
         appBar: PageHeaderWidget(
           title: 'Add Task',
-          exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
+          returnRoute: returnRoute,
+          // exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
           additionalAction: [
             InkWell(
               child: const Material(

@@ -11,6 +11,7 @@ import 'package:time_management/styles.dart';
 import 'package:time_management/widgets/input_text_field.dart';
 import 'package:time_management/widgets/loading_page_widget.dart';
 import 'package:time_management/widgets/page_header_widget.dart';
+import 'package:time_management/widgets/scrolling_options_widget.dart';
 
 class AddRoutinePage extends StatelessWidget {
   AddRoutinePage({super.key, this.returnRoute});
@@ -33,9 +34,8 @@ class AddRoutinePage extends StatelessWidget {
     return Scaffold(
       appBar: PageHeaderWidget(
         title: "Add Routine",
-        exitDialog: DialogConstants.exitDialog(
-          returnRoute: returnRoute,
-        ),
+        returnRoute: returnRoute,
+        // exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
       ),
       body: Column(
         children: [
@@ -334,12 +334,16 @@ class AddRoutinePage extends StatelessWidget {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          ScrollingOptionsWidget(
-                            options: StringConstants.routineSequence,
-                            initialValue: sequence.value,
-                            onChanged: (index) {
-                              currVal = index;
-                            },
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: ScrollingOptionsWidget(
+                              options: StringConstants.routineSequence,
+                              initialValue: sequence.value,
+                              onChanged: (index) {
+                                currVal = index;
+                              },
+                            ),
                           ),
                           SizedBox(
                             height: 50.0,
@@ -394,76 +398,4 @@ class AddRoutinePage extends StatelessWidget {
   //     child: FittedBox(child: Icon(Icons.delete_forever_outlined)),
   //   );
   // }
-}
-
-class ScrollingOptionsWidget extends StatelessWidget {
-  ScrollingOptionsWidget(
-      {super.key, required this.options, this.onChanged, this.initialValue});
-  final List<String> options;
-  final Function(int)? onChanged;
-  final int? initialValue;
-  final PageController pageController = PageController();
-  final RxInt currOption = 0.obs;
-  static const itemHeight = 50.0;
-
-  void onPageChange() {
-    if (pageController.page != null &&
-        pageController.page!.round() != currOption.value) {
-      currOption.value = pageController.page!.round();
-      onChanged?.call(currOption.value);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (initialValue != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        pageController.jumpToPage(initialValue!);
-      });
-      pageController.addListener(onPageChange);
-    }
-    return SizedBox(
-      height: itemHeight,
-      child: PageView.builder(
-        controller: pageController,
-        itemCount: options.length,
-        scrollDirection: Axis.vertical,
-        itemBuilder: (context, index) {
-          return Container(
-            height: itemHeight,
-            margin: const EdgeInsets.symmetric(horizontal: 20.0),
-            decoration: BoxDecoration(
-              border: index == 0
-                  ? const Border(
-                      bottom: BorderSide(width: 5.0),
-                      left: BorderSide(),
-                      right: BorderSide(),
-                      top: BorderSide())
-                  : (index == options.length - 1)
-                      ? const Border(
-                          top: BorderSide(width: 5.0),
-                          left: BorderSide(),
-                          right: BorderSide(),
-                          bottom: BorderSide(),
-                        )
-                      : const Border(
-                          top: BorderSide(width: 5.0),
-                          left: BorderSide(),
-                          right: BorderSide(),
-                          bottom: BorderSide(width: 5.0),
-                        ),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              options[index],
-              style: AppStyles.defaultFont.copyWith(
-                fontSize: AppFontSizes.body,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 }

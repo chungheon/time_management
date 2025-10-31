@@ -7,10 +7,15 @@ import 'package:time_management/styles.dart';
 
 class PageHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
   const PageHeaderWidget(
-      {required this.title, super.key, this.exitDialog, this.additionalAction});
+      {required this.title,
+      super.key,
+      this.exitDialog,
+      this.additionalAction,
+      this.returnRoute});
   final String title;
   final Widget? exitDialog;
   final List<Widget>? additionalAction;
+  final String? returnRoute;
   static const double actionWidth = 50.0;
   @override
   Size get preferredSize => const Size.fromHeight(50.0);
@@ -30,7 +35,13 @@ class PageHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
               onTap: () {
                 FocusManager.instance.primaryFocus?.unfocus();
                 if (exitDialog == null) {
-                  Get.back();
+                  if (returnRoute != null) {
+                    Get.until(
+                      (route) => route.settings.name == returnRoute,
+                    );
+                  } else {
+                    Get.back();
+                  }
                 } else {
                   showDialog(
                     context: context,

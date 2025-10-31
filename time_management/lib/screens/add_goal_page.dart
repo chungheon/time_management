@@ -41,7 +41,8 @@ class AddGoalPage extends StatelessWidget {
         backgroundColor: StateContainer.of(context)?.currTheme.background,
         appBar: PageHeaderWidget(
           title: 'Create Goal',
-          exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
+          returnRoute: returnRoute,
+          // exitDialog: DialogConstants.exitDialog(returnRoute: returnRoute),
         ),
         body: Column(children: [
           Expanded(
