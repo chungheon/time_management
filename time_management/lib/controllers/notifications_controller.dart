@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
-import 'package:time_management/constants/sql_constants.dart';
 import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
@@ -38,8 +37,8 @@ class NotificationsController extends GetxController {
         onDidReceiveNotificationResponse: selectNotificationStream.add);
     _configureRecievedNotifications();
     int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
-    setupRoutineNotifications(
-        routineController.routineList, goalsController.dayPlansList[now] ?? []);
+    // setupRoutineNotifications(
+    //     routineController.routineList, goalsController.dayPlansList[now] ?? []);
   }
 
   Future<void> refreshNotifications(RoutineController routineController,
@@ -47,6 +46,22 @@ class NotificationsController extends GetxController {
     int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
     setupRoutineNotifications(
         routineController.routineList, goalsController.dayPlansList[now] ?? []);
+  }
+
+  Future<void> showNotificationInstant(String title, String body) async {
+    flutterLocalNotificationsPlugin.show(
+        await getActiveNotificationsId(),
+        title,
+        body,
+        const NotificationDetails(
+            android: AndroidNotificationDetails(
+          "Pomodoro",
+          "Pomodoro",
+          channelDescription: 'For Pomodoro Tracking',
+          importance: Importance.max,
+          priority: Priority.max,
+          onlyAlertOnce: true,
+        )));
   }
 
   Future<void> setupRoutineNotifications(
@@ -139,15 +154,15 @@ class NotificationsController extends GetxController {
     return (exactAlarm ? 1 : 0) + (notification ? 2 : 0);
   }
 
-  Future<List<ActiveNotification>> getActiveNotifications() async {
-    List<ActiveNotification> active =
-        await flutterLocalNotificationsPlugin.getActiveNotifications();
+  Future<List<PendingNotificationRequest>> getActiveNotifications() async {
+    List<PendingNotificationRequest> active =
+        await flutterLocalNotificationsPlugin.pendingNotificationRequests();
     return active;
   }
 
   Future<int> getActiveNotificationsId() async {
-    List<ActiveNotification> sortedList = await getActiveNotifications();
-    List<int> sortedId = sortedList.map((element) => element.id ?? -1).toList()
+    List<PendingNotificationRequest> sortedList = await getActiveNotifications();
+    List<int> sortedId = sortedList.map((element) => element.id).toList()
       ..sort();
     return sortedList.isEmpty
         ? 2147483647
@@ -215,7 +230,7 @@ class NotificationsController extends GetxController {
     tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,
             date.day, date.hour, date.minute, date.second)
         .subtract(date.timeZoneOffset);
-    int id = ++idCounter;
+    int id = await getActiveNotificationsId();
     try {
       await flutterLocalNotificationsPlugin.zonedSchedule(
         id,

@@ -4,15 +4,23 @@ import 'package:time_management/styles.dart';
 import 'package:time_management/widgets/confirmation_dialog.dart';
 
 class DialogConstants {
-  static Widget exitDialog({String? returnRoute, String? msg}) {
+  static Widget exitDialog(
+      {String? returnRoute,
+      String? msg,
+      Future<void> Function()? onConfirm,
+      Future<void> Function()? onCancelled}) {
     return ConfirmationDialog(
       message: msg ?? "Discard all and return?",
       onConfirm: () async {
+        await onConfirm?.call();
         if (returnRoute != null) {
           Get.until((route) => route.settings.name == returnRoute);
         } else {
           Get.until((route) => route.isFirst);
         }
+      },
+      onCancelled: () async {
+        await onCancelled?.call();
       },
     );
   }
