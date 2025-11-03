@@ -24,11 +24,14 @@ class Routine with SQFLiteObject {
 
   factory Routine.fromSQFLITEMap(Map<String, Object?> queryResult) {
     int? rUid = int.tryParse(queryResult[SQLConstants.colRoutineId].toString());
-    int? rSeq = queryResult[SQLConstants.colRoutineSeq] as int?;
+    int? rSeq =
+        int.tryParse(queryResult[SQLConstants.colRoutineSeq].toString());
     String? rName = (queryResult[SQLConstants.colRoutineName] ?? '').toString();
     String? rDesc = (queryResult[SQLConstants.colRoutineDesc] ?? '').toString();
-    int? rStartDate = queryResult[SQLConstants.colRoutineStart] as int?;
-    int? rEndDate = queryResult[SQLConstants.colRoutineEnd] as int?;
+    int? rStartDate =
+        int.tryParse(queryResult[SQLConstants.colRoutineStart].toString());
+    int? rEndDate =
+        int.tryParse(queryResult[SQLConstants.colRoutineEnd].toString());
     return Routine(
       uid: rUid,
       seq: rSeq,

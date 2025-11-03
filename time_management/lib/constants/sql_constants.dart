@@ -23,6 +23,11 @@ class SQLConstants {
       'CREATE TABLE IF NOT EXISTS $routineTable($colRoutineId INTEGER PRIMARY KEY, $colRoutineName TEXT,' +
           ' $colRoutineDesc TEXT, $colRoutineStart INTEGER, $colRoutineEnd INTEGER, $colRoutineSeq INT1 NOT NULL);';
 
+  static const String createSessionTable =
+      'CREATE TABLE IF NOT EXISTS $sessionTable($colSessionId INTEGER PRIMARY KEY, $colSessionDate INT NOT NULL,' +
+          '$colSessionNo INT NOT NULL, $colSessionBreak INT NOT NULL, $colSessionInterval INT1 NOT NULL,' +
+          '$colSessionBreakInterval INT1 NOT NULL);';
+
   static const String createChecklistTable =
       'CREATE TABLE IF NOT EXISTS $checklistTable($colChecklistId INTEGER PRIMARY KEY, $colChecklistDate INTEGER NOT NULL, ' +
           '$colChecklistRoutineId INTEGER, ' +
@@ -93,8 +98,21 @@ class SQLConstants {
           'FOREIGN KEY ($colDocTaskDocId) ' +
           'REFERENCES $docTable($colDocId)' +
           ' ON DELETE CASCADE, ' +
-          'CONSTRAINT $docTaskTaskFK '
-              'FOREIGN KEY ($colDocTaskTaskId) ' +
+          'CONSTRAINT $docTaskTaskFK ' +
+          'FOREIGN KEY ($colDocTaskTaskId) ' +
+          'REFERENCES $taskTable($colTaskId)' +
+          ' ON DELETE CASCADE)';
+
+  static const String createSessionTaskTable =
+      'CREATE TABLE IF NOT EXISTS $sessTaskTable($colSessTaskSessId INTEGER NOT NULL, ' +
+          '$colSessTaskTaskId INTEGER NOT NULL, ' +
+          'UNIQUE ($colSessTaskSessId, $colSessTaskTaskId), ' +
+          'CONSTRAINT $sessTaskSessFK ' +
+          'FOREIGN KEY ($colSessTaskSessId) ' +
+          'REFERENCES $sessionTable($colSessionId)' +
+          ' ON DELETE CASCADE, ' +
+          'CONSTRAINT $sessTaskTaskFK ' +
+          'FOREIGN KEY ($colSessTaskTaskId) ' +
           'REFERENCES $taskTable($colTaskId)' +
           ' ON DELETE CASCADE)';
 
@@ -161,7 +179,7 @@ class SQLConstants {
   //Constraints
   static const String checklistFKRoutine = "fk_routine";
 
-  //Foreign Key - Linked to Goals Table Primary Key id
+  //Foreign Key - Linked to Routine Table Primary Key id
   static const String colChecklistRoutineId = "routine_uid";
 
   //Type - Int
@@ -204,7 +222,7 @@ class SQLConstants {
   //Constraints
   static const String tagHistoryFKTag = "fk_tag";
 
-  //Foreign Key - Linked to Goals Table Primary Key id
+  //Foreign Key - Linked to Tags Table Primary Key id
   static const String colTagHistoryTagId = "tag_uid";
 
   //Type - String
@@ -259,6 +277,7 @@ class SQLConstants {
   static const String tagTaskFK = "fk_tag_task";
   //Foreign Key - Linked to Goals Table Primary Key id
   static const String colTagTaskTaskId = "task_uid";
+  //Foreign Key - Linked to Tags Table Primary Key id
   static const String colTagTaskTagId = "tag_uid";
 
   //List of all Manual tag task table columns
@@ -274,8 +293,9 @@ class SQLConstants {
   //Constraints
   static const String docTaskTaskFK = "fk_doc_task_task";
   static const String docTaskDocFK = "fk_doc_task_doc";
-  //Foreign Key - Linked to Goals Table Primary Key id
+  //Foreign Key - Linked to Task Table Primary Key id
   static const String colDocTaskTaskId = "task_uid";
+  //Foreign Key - Linked to Doc Table Primary Key id
   static const String colDocTaskDocId = "doc_uid";
 
   //List of all Manual doc task table columns
@@ -299,7 +319,7 @@ class SQLConstants {
   //Foreign Key - Linked to Goals Table Primary Key id
   static const String colDocGoalId = "goal_uid";
 
-  //List of all Manual doc goal table columns
+  //List of all Manual doc table columns
   static const List<String> docCols = [
     colDocGoalId,
     colDocPath,
@@ -321,13 +341,59 @@ class SQLConstants {
 
   //Constraints
   static const String dayPlanFKTask = "fk_day_task";
-  //Foreign Key - Linked to Goals Table Primary Key id
+  //Foreign Key - Linked to Task Table Primary Key id
   static const String colDayPlanTaskId = "task_uid";
 
-  //List of all Manual doc goal table columns
+  //List of all Manual day plan item table columns
   static const List<String> dayPlanCols = [
     colDayPlanTaskId,
     colDayPlanDate,
     colDayPlanPriority,
+  ];
+
+  /*
+    Session(POMODORO) Table
+  */
+  static const String sessionTable = "session";
+
+  //Primary Key - UID int
+  static const String colSessionId = "uid";
+
+  //Type - INT
+  static const String colSessionDate = "date";
+  static const String colSessionNo = "num";
+  static const String colSessionBreak = "break";
+
+  //Type - INT1
+  static const String colSessionInterval = "session_interval";
+  static const String colSessionBreakInterval = "break_interval";
+
+  //List of all Manual session table columns
+  static const List<String> sessionCols = [
+    colSessionDate,
+    colSessionNo,
+    colSessionBreak,
+    colSessionInterval,
+    colSessionBreakInterval,
+  ];
+
+  /*
+    Session Task Table (Look Up Table)
+
+    UNIQUE - (colSessTaskTaskId, colSessTaskSessId)
+  */
+  static const String sessTaskTable = "session_tasks";
+
+  //Constraints
+  static const String sessTaskTaskFK = "fk_sess_task_task";
+  static const String sessTaskSessFK = "fk_sess_task_sess";
+  //Foreign Key - Linked to Session Table Primary Key id
+  static const String colSessTaskTaskId = "task_uid";
+  static const String colSessTaskSessId = "sess_uid";
+
+  //List of all Manual doc task table columns
+  static const List<String> sessTaskCols = [
+    colSessTaskTaskId,
+    colSessTaskSessId
   ];
 }

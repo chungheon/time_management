@@ -103,7 +103,8 @@ class SQLHelper {
     return stmt;
   }
 
-    static String selectAllBetweenStmt(int lowerBound, int upperBound, String col) {
+  static String selectAllBetweenStmt(
+      int lowerBound, int upperBound, String col) {
     return " WHERE $col BETWEEN $lowerBound AND $upperBound";
   }
 
@@ -125,13 +126,20 @@ class SQLHelper {
     return "SELECT * FROM ${SQLConstants.taskTable} WHERE ${SQLConstants.colTaskGoalId} = $goalUid";
   }
 
-  static String selectTasksWithinDate(int goalUid, int startDate, {int? endDate}) {
-    String selectStmt = "SELECT * FROM ${SQLConstants.taskTable} WHERE ${SQLConstants.colTaskGoalId} = $goalUid " + 
-    "AND (${SQLConstants.colTaskActionDate} IS NULL OR (${SQLConstants.colTaskActionDate} >= $startDate ";
-    if(endDate == null){
+  static String selectTasksWithinDate(int goalUid, int startDate,
+      {int? endDate}) {
+    String selectStmt =
+        "SELECT * FROM ${SQLConstants.taskTable} WHERE ${SQLConstants.colTaskGoalId} = $goalUid " +
+            "AND (${SQLConstants.colTaskActionDate} IS NULL OR (${SQLConstants.colTaskActionDate} >= $startDate ";
+    if (endDate == null) {
       return selectStmt + "))";
     }
     return selectStmt + " AND ${SQLConstants.colTaskActionDate} <= $endDate))";
+  }
+
+  static String selectSessionLastDate() {
+    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
+    return "SELECT * FROM ${SQLConstants.sessionTable} WHERE ${SQLConstants.colSessionDate} > $now";
   }
 
   static String selectTaskById(int taskUid) {
@@ -153,7 +161,7 @@ class SQLHelper {
   static String selectOverDueTasks(int startDate) {
     int prevDate = startDate - 86400000;
     return "SELECT * FROM ${SQLConstants.taskTable} " +
-        "WHERE ${SQLConstants.colTaskActionDate} < $startDate AND ${SQLConstants.colTaskActionDate} >= $prevDate " + 
+        "WHERE ${SQLConstants.colTaskActionDate} < $startDate AND ${SQLConstants.colTaskActionDate} >= $prevDate " +
         " AND (${SQLConstants.colTaskStatus} = 0  OR ${SQLConstants.colTaskStatus} = 1)";
   }
 

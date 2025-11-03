@@ -31,7 +31,8 @@ class Goal with SQFLiteObject {
     String? rName = (queryResult[SQLConstants.colGoalName] ?? '').toString();
     String? rPurpose =
         (queryResult[SQLConstants.colGoalPurpose] ?? '').toString();
-    int? rDueDate = queryResult[SQLConstants.colGoalDueDate] as int?;
+    int? rDueDate =
+        int.tryParse(queryResult[SQLConstants.colGoalDueDate].toString());
     return Goal(uid: rUid, name: rName, purpose: rPurpose, dueDate: rDueDate);
   }
 
@@ -47,7 +48,8 @@ class Goal with SQFLiteObject {
     String? rName = (queryResult[SQLConstants.colGoalName] ?? '').toString();
     String? rPurpose =
         (queryResult[SQLConstants.colGoalPurpose] ?? '').toString();
-    int? rDueDate = queryResult[SQLConstants.colGoalDueDate] as int?;
+    int? rDueDate =
+        int.tryParse(queryResult[SQLConstants.colGoalDueDate].toString());
     name = rName;
     purpose = rPurpose;
     dueDate = rDueDate;

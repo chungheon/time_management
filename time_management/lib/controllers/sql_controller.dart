@@ -16,6 +16,8 @@ class SQLController extends GetxController {
 
     var path = join(await getDatabasesPath(), dbName);
     var archive = join(await getDatabasesPath(), archiveDb);
+    // await databaseFactory.deleteDatabase(path);
+    // await databaseFactory.deleteDatabase(archive);
     final database =
         await openDatabase(path, version: 2, onConfigure: (Database db) async {
       await db.execute('PRAGMA foreign_keys = ON');
@@ -29,6 +31,8 @@ class SQLController extends GetxController {
       db.execute(SQLConstants.createDocumentTaskTable);
       db.execute(SQLConstants.createRoutineTable);
       db.execute(SQLConstants.createChecklistTable);
+      db.execute(SQLConstants.createSessionTable);
+      db.execute(SQLConstants.createSessionTaskTable);
     }, onOpen: (db) async {
       db.execute(SQLConstants.createGoalsTable);
       db.execute(SQLConstants.createTagsTable);
@@ -38,6 +42,8 @@ class SQLController extends GetxController {
       db.execute(SQLConstants.createDocumentTaskTable);
       db.execute(SQLConstants.createRoutineTable);
       db.execute(SQLConstants.createChecklistTable);
+      db.execute(SQLConstants.createSessionTable);
+      db.execute(SQLConstants.createSessionTaskTable);
     }, onUpgrade: (db, oldVersion, newVersion) {
       if (newVersion - 1 > SQLConstants.upgrades.length) {
         return;
@@ -54,6 +60,14 @@ class SQLController extends GetxController {
     _archiveDatabase =
         await openDatabase(archive, version: 1, onConfigure: (db) async {
       await db.execute('PRAGMA foreign_keys = ON');
+    }, onCreate: (db, version) {
+      db.execute(SQLConstants.createGoalsTable);
+      db.execute(SQLConstants.insertDefaultGoal);
+      db.execute(SQLConstants.createTagsTable);
+      db.execute(SQLConstants.createTaskTable);
+      db.execute(SQLConstants.createDayPlanTable);
+      db.execute(SQLConstants.createDocumentTable);
+      db.execute(SQLConstants.createDocumentTaskTable);
     }, onOpen: (db) {
       attachDb(db, path, SQLConstants.mainDatabaseAlias);
       db.execute(SQLConstants.createGoalsTable);

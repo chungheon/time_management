@@ -50,15 +50,20 @@ class Task with SQFLiteObject {
   Goal? goal;
 
   factory Task.fromSQFLITEMap(Map<String, Object?> queryResult) {
-    int? rUid = queryResult[SQLConstants.colTaskId] as int?;
+    int? rUid = int.tryParse(queryResult[SQLConstants.colTaskId].toString());
     String? rTask = queryResult[SQLConstants.colTaskTask] as String?;
-    TaskStatus? rStatus = queryResult[SQLConstants.colTaskStatus] == null
-        ? null
-        : TaskStatus.values[queryResult[SQLConstants.colTaskStatus] as int];
-    int? rActionDate = queryResult[SQLConstants.colTaskActionDate] as int?;
-    int? rGoalTaskId = queryResult[SQLConstants.colTaskGoalId] as int?;
-    int? rCompDate = queryResult[SQLConstants.colTaskCompletionDate] as int?;
-    int? alertTime = queryResult[SQLConstants.colTaskAlertTime] as int?;
+    int? rStatusVal =
+        int.tryParse(queryResult[SQLConstants.colTaskStatus].toString());
+    TaskStatus? rStatus =
+        rStatusVal == null ? null : TaskStatus.values[rStatusVal];
+    int? rActionDate =
+        int.tryParse(queryResult[SQLConstants.colTaskActionDate].toString());
+    int? rGoalTaskId =
+        int.tryParse(queryResult[SQLConstants.colTaskGoalId].toString());
+    int? rCompDate = int.tryParse(
+        queryResult[SQLConstants.colTaskCompletionDate].toString());
+    int? alertTime =
+        int.tryParse(queryResult[SQLConstants.colTaskAlertTime].toString());
     return Task(
       uid: rUid,
       task: rTask,

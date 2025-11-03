@@ -7,6 +7,7 @@ import 'package:time_management/controllers/goal_view_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
+import 'package:time_management/controllers/session_controller.dart';
 import 'package:time_management/controllers/sql_controller.dart';
 import 'package:time_management/controllers/view_controller.dart';
 import 'package:time_management/screens/home_page.dart';
@@ -42,6 +43,7 @@ Future<void> initNotifications() async {
   Get.put(routineController, permanent: true);
   Get.put(notificationsController, permanent: true);
   Get.put(goalsController, permanent: true);
+  Get.lazyPut(() => SessionController());
   await routineController.init();
   notificationsController.init(routineController, goalsController);
 }

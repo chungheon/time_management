@@ -97,7 +97,9 @@ class AddTaskPage extends StatelessWidget {
     List<Task> uniqueList = [];
     List<String> uniqueTasks = [];
     selectedGoal.value?.tasks.forEach((element) {
-      if (element.task != null && !uniqueTasks.contains(element.task)) {
+      if (element.task != null &&
+          element.status != TaskStatus.completed &&
+          !uniqueTasks.contains(element.task)) {
         uniqueList.add(element);
         uniqueTasks.add(element.task!);
       }

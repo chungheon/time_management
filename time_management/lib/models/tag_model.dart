@@ -11,7 +11,7 @@ class Tag with SQFLiteObject {
   factory Tag.fromSQFLITEMap(Map<String, Object?> queryResult) {
     int? rUid = int.tryParse(queryResult[SQLConstants.colTagId].toString());
     String? rName = (queryResult[SQLConstants.colTagName] ?? '').toString();
-    int rGoalUid = queryResult[SQLConstants.colTagGoalId]! as int;
+    int? rGoalUid = int.tryParse([SQLConstants.colTagGoalId].toString());
     return Tag(uid: rUid, goalUid: rGoalUid, name: rName);
   }
 

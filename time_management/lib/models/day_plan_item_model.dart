@@ -16,25 +16,27 @@ class DayPlanItem with SQFLiteObject {
 
   factory DayPlanItem.fromSQFLITEMap(Map<String, Object?> queryResult) {
     int? rUid = int.tryParse(queryResult[SQLConstants.colDayPlanId].toString());
-    int? rTaskId = queryResult[SQLConstants.colDayPlanTaskId] as int?;
+    int? rTaskId =
+        int.tryParse(queryResult[SQLConstants.colDayPlanTaskId].toString());
+    int? rTaskPriorityVal =
+        int.tryParse(queryResult[SQLConstants.colDayPlanPriority].toString());
     TaskPriority? rTaskPriority =
-        queryResult[SQLConstants.colDayPlanPriority] == null
-            ? null
-            : TaskPriority
-                .values[queryResult[SQLConstants.colDayPlanPriority] as int];
-    int? rDate = queryResult[SQLConstants.colDayPlanDate] as int?;
+        rTaskPriorityVal == null ? null : TaskPriority.values[rTaskPriorityVal];
+    int? rDate =
+        int.tryParse(queryResult[SQLConstants.colDayPlanDate].toString());
     return DayPlanItem(
         uid: rUid, taskId: rTaskId, taskPriority: rTaskPriority, date: rDate);
   }
 
   void updateFromSQFLITEMap(Map<String, Object?> queryResult) {
-    int? rTaskId = queryResult[SQLConstants.colDayPlanTaskId] as int?;
+    int? rTaskId =
+        int.tryParse(queryResult[SQLConstants.colDayPlanTaskId].toString());
+    int? rTaskPriorityVal =
+        int.tryParse(queryResult[SQLConstants.colDayPlanPriority].toString());
     TaskPriority? rTaskPriority =
-        queryResult[SQLConstants.colDayPlanPriority] == null
-            ? null
-            : TaskPriority
-                .values[queryResult[SQLConstants.colDayPlanPriority] as int];
-    int? rDate = queryResult[SQLConstants.colDayPlanDate] as int?;
+        rTaskPriorityVal == null ? null : TaskPriority.values[rTaskPriorityVal];
+    int? rDate =
+        int.tryParse(queryResult[SQLConstants.colDayPlanDate].toString());
     taskId = rTaskId;
     taskPriority = rTaskPriority;
     date = rDate;
@@ -48,23 +50,23 @@ class DayPlanItem with SQFLiteObject {
     } else if (second.task == null) {
       return -1;
     }
-    
-    if((first.taskPriority?.index == second.taskPriority?.index)){
+
+    if ((first.taskPriority?.index == second.taskPriority?.index)) {
       return Task.prioritySort(first.task!, second.task!);
     }
 
-    if(first.task!.status == TaskStatus.completed || first.task!.status == TaskStatus.archive){
-      if(second.task!.status != TaskStatus.completed && second.task!.status != TaskStatus.archive)
-      {
+    if (first.task!.status == TaskStatus.completed ||
+        first.task!.status == TaskStatus.archive) {
+      if (second.task!.status != TaskStatus.completed &&
+          second.task!.status != TaskStatus.archive) {
         return 1;
       }
-    }else if(second.task!.status == TaskStatus.completed || second.task!.status == TaskStatus.archive){
+    } else if (second.task!.status == TaskStatus.completed ||
+        second.task!.status == TaskStatus.archive) {
       return -1;
     }
 
     return (first.taskPriority?.index ?? 0) - (second.taskPriority?.index ?? 0);
-
-    
   }
 
   @override
@@ -108,5 +110,4 @@ class DayPlanItem with SQFLiteObject {
     }
     return isEqual;
   }
-
 }

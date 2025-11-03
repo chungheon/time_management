@@ -11,8 +11,10 @@ import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goal_view_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
+import 'package:time_management/controllers/session_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
+import 'package:time_management/models/session_model.dart';
 import 'package:time_management/models/task_model.dart';
 import 'package:time_management/screens/document_view_page.dart';
 import 'package:time_management/styles.dart';
@@ -20,26 +22,13 @@ import 'package:time_management/widgets/page_header_widget.dart';
 import 'package:time_management/widgets/scrolling_options_widget.dart';
 
 class FocusPage extends StatelessWidget {
-  FocusPage({super.key, this.returnRoute, required this.dayPlanItems}) {
-    _initialSecs.value = _inputTimeMin.value * 60;
-    _sessionSecs.value = _initialSecs.value;
-    _timer.value.cancel();
-  }
+  FocusPage({super.key, this.returnRoute, required this.dayPlanItems});
   final NotificationsController _notificationsController = Get.find();
   final GoalsController _goalsController = Get.find();
+  final SessionController _sessionController = Get.find();
   final GoalViewController _goalViewController = Get.find();
   final String? returnRoute;
   final List<DayPlanItem> dayPlanItems;
-  final RxInt _sessionSecs = RxInt(1800);
-  final RxInt _initialSecs = RxInt(1800);
-  final Rx<Timer> _timer = Rx<Timer>(Timer(Duration.zero, () {}));
-  final RxInt _sessions = RxInt(0);
-  final RxInt _inputTimeMin = RxInt(30);
-  final RxInt _inputBreakMin = RxInt(5);
-  final PageController _timeMinController = PageController();
-  final PageController _breakMinController = PageController();
-  final RxBool _isSession = true.obs;
-  final RxBool _isPaused = false.obs;
 
   static final List<Image> _timerImages = [
     Image.asset("assets/png/0.png"),
@@ -81,6 +70,111 @@ class FocusPage extends StatelessWidget {
     );
   }
 
+  void onTapTimer(SessionController controller) {
+    if (controller.timer.value.isActive) {
+      controller.isPaused.value = true;
+      controller.timer.value.cancel();
+    } else {
+      controller.isPaused.value = false;
+      controller.timer.value = Timer.periodic(const Duration(seconds: 1), (_) {
+        controller.sessionSecs.value -= 1;
+        if (controller.sessionSecs.value == 0) {
+          controller.initialSecs.value = (controller.inputTimeMin.value * 60);
+          controller.sessionSecs.value = controller.initialSecs.value;
+          controller.timer.value.cancel();
+        }
+      });
+    }
+  }
+
+  void onTapDecrementTimer(SessionController controller) {
+    if (controller.inputTimeMin.value > controller.incrementMin) {
+      controller.inputTimeMin.value -= 1;
+      controller.timeMinController
+          .jumpToPage(controller.inputTimeMin.value - 1);
+    }
+  }
+
+  void onTapIncrementTimer(SessionController controller) {
+    if (controller.inputTimeMin.value < controller.incrementMax) {
+      controller.inputTimeMin.value += 1;
+      controller.timeMinController
+          .jumpToPage(controller.inputTimeMin.value - 1);
+    }
+  }
+
+  void onTapDecrementBreak(SessionController controller) {
+    if (controller.inputBreakMin.value > controller.breakMin) {
+      controller.inputBreakMin.value -= 1;
+      controller.breakMinController
+          .jumpToPage(controller.inputBreakMin.value - 1);
+    }
+  }
+
+  void onTapIncrementBreak(SessionController controller) {
+    if (controller.inputBreakMin.value > controller.breakMax) {
+      controller.inputBreakMin.value += 1;
+      controller.breakMinController
+          .jumpToPage(controller.inputBreakMin.value - 1);
+    }
+  }
+
+  void onTapStartTimer(SessionController controller) {
+    if (controller.timer.value.isActive || controller.isPaused.value) {
+      if (controller.isSession.value) {
+        controller.timer.value.cancel();
+        controller.timer.value = Timer(Duration.zero, () {});
+        controller.initialSecs.value = (controller.inputTimeMin.value * 60);
+        controller.sessionSecs.value = controller.initialSecs.value;
+      }
+      controller.isPaused.value = false;
+    } else {
+      controller.timer.value.cancel();
+      controller.isSession.value = true;
+      controller.initialSecs.value = (controller.inputTimeMin.value);
+      controller.sessionSecs.value = controller.initialSecs.value;
+      controller.timer.value = Timer.periodic(const Duration(seconds: 1), (_) {
+        controller.sessionSecs.value -= 1;
+        if (controller.sessionSecs.value == 0) {
+          controller.initialSecs.value = (controller.inputTimeMin.value * 60);
+          controller.sessionSecs.value = controller.initialSecs.value;
+          controller.sessionComplete(controller.latestSess);
+          controller.timer.value.cancel();
+          controller.update();
+        }
+      });
+    }
+    controller.update();
+  }
+
+  void onTapStartBreak(SessionController controller) {
+    if (controller.timer.value.isActive || controller.isPaused.value) {
+      if (!controller.isSession.value) {
+        controller.timer.value.cancel();
+        controller.timer.value = Timer(Duration.zero, () {});
+        controller.initialSecs.value = (controller.inputBreakMin.value * 60);
+        controller.sessionSecs.value = controller.initialSecs.value;
+      }
+      controller.isPaused.value = false;
+    } else {
+      controller.timer.value.cancel();
+      controller.isSession.value = false;
+      controller.initialSecs.value = (controller.inputBreakMin.value);
+      controller.sessionSecs.value = controller.initialSecs.value;
+      controller.timer.value = Timer.periodic(const Duration(seconds: 1), (_) {
+        controller.sessionSecs.value -= 1;
+        if (controller.sessionSecs.value == 0) {
+          controller.initialSecs.value = (controller.inputTimeMin.value * 60);
+          controller.sessionSecs.value = controller.initialSecs.value;
+          controller.breakComplete(controller.latestSess);
+          controller.timer.value.cancel();
+          controller.update();
+        }
+      });
+    }
+    controller.update();
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -93,7 +187,7 @@ class FocusPage extends StatelessWidget {
                 returnRoute: returnRoute,
                 msg: "Exit Focus Mode?",
                 onConfirm: () async {
-                  _timer.value.cancel();
+                  _sessionController.timer.value.cancel();
                 }),
           );
         }
@@ -105,7 +199,7 @@ class FocusPage extends StatelessWidget {
               returnRoute: returnRoute,
               msg: "Exit Focus Mode?",
               onConfirm: () async {
-                _timer.value.cancel();
+                _sessionController.timer.value.cancel();
               }),
         ),
         body: GetBuilder(
@@ -121,33 +215,14 @@ class FocusPage extends StatelessWidget {
                       ),
                       Obx(
                         () => GestureDetector(
-                          onTap: () {
-                            if (_timer.value.isActive) {
-                              _isPaused.value = true;
-                              _timer.value.cancel();
-                            } else {
-                              _isPaused.value = false;
-                              _timer.value = Timer.periodic(
-                                  const Duration(seconds: 1), (_) {
-                                _sessionSecs.value -= 1;
-                                if (_sessionSecs.value == 0) {
-                                  _initialSecs.value =
-                                      (_inputTimeMin.value * 60);
-                                  _sessionSecs.value = _initialSecs.value;
-                                  _notificationsController
-                                      .showNotificationInstant("TIME UP!",
-                                          "FINISHED ${_initialSecs.value} SECS");
-                                  _timer.value.cancel();
-                                }
-                              });
-                            }
-                          },
+                          onTap: () => onTapTimer(_sessionController),
                           child: Stack(
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  ..._generateTimer(_sessionSecs.value),
+                                  ..._generateTimer(
+                                      _sessionController.sessionSecs.value),
                                 ],
                               ),
                               Positioned(
@@ -157,7 +232,9 @@ class FocusPage extends StatelessWidget {
                                 bottom: 0,
                                 child: Obx(
                                   () => Opacity(
-                                    opacity: _isPaused.value ? 1 : 0,
+                                    opacity: _sessionController.isPaused.value
+                                        ? 1
+                                        : 0,
                                     child: Center(
                                         child: Text(
                                       "-PAUSED-",
@@ -179,13 +256,8 @@ class FocusPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: () {
-                                if (_inputTimeMin.value > 1) {
-                                  _inputTimeMin.value -= 1;
-                                  _timeMinController
-                                      .jumpToPage(_inputTimeMin.value - 1);
-                                }
-                              },
+                              onTap: () =>
+                                  onTapDecrementTimer(_sessionController),
                               child: Container(
                                 padding: const EdgeInsets.only(bottom: 15.0),
                                 alignment: Alignment.center,
@@ -211,23 +283,22 @@ class FocusPage extends StatelessWidget {
                               options: [
                                 for (int i = 1; i <= 120; i++) i.toString()
                               ],
-                              controller: _timeMinController,
-                              initialValue: _inputTimeMin.value - 1,
+                              controller: _sessionController.timeMinController,
+                              initialValue:
+                                  _sessionController.inputTimeMin.value - 1,
                               onChanged: (index) {
-                                _inputTimeMin.value = index + 1;
-                                _initialSecs.value = (_inputTimeMin.value * 60);
+                                _sessionController.inputTimeMin.value =
+                                    index + 1;
+                                _sessionController.initialSecs.value =
+                                    (_sessionController.inputTimeMin.value *
+                                        60);
                               },
                             ),
                           ),
                           Expanded(
                             child: InkWell(
-                              onTap: () {
-                                if (_inputTimeMin.value < 120) {
-                                  _inputTimeMin.value += 1;
-                                  _timeMinController
-                                      .jumpToPage(_inputTimeMin.value - 1);
-                                }
-                              },
+                              onTap: () =>
+                                  onTapIncrementTimer(_sessionController),
                               child: Container(
                                 alignment: Alignment.center,
                                 color: Colors.transparent,
@@ -250,40 +321,13 @@ class FocusPage extends StatelessWidget {
                                 ?.currTheme
                                 .darkButton),
                         child: GestureDetector(
-                          onTap: () {
-                            if (_timer.value.isActive || _isPaused.value) {
-                              if (_isSession.value) {
-                                _timer.value.cancel();
-                                _timer.value = Timer(Duration.zero, () {});
-                                _initialSecs.value = (_inputTimeMin.value * 60);
-                                _sessionSecs.value = _initialSecs.value;
-                              }
-                              _isPaused.value = false;
-                            } else {
-                              _timer.value.cancel();
-                              _isSession.value = true;
-                              _initialSecs.value = (_inputTimeMin.value * 60);
-                              _sessionSecs.value = _initialSecs.value;
-                              _timer.value = Timer.periodic(
-                                  const Duration(seconds: 1), (_) {
-                                _sessionSecs.value -= 1;
-                                if (_sessionSecs.value == 0) {
-                                  _initialSecs.value =
-                                      (_inputTimeMin.value * 60);
-                                  _sessionSecs.value = _initialSecs.value;
-                                  _notificationsController
-                                      .showNotificationInstant("TIME UP!",
-                                          "FINISHED ${_initialSecs.value} SECS");
-                                  _timer.value.cancel();
-                                }
-                              });
-                            }
-                          },
+                          onTap: () => onTapStartTimer(_sessionController),
                           child: Center(
-                            child: Obx(
-                              () => Text(
-                                _isSession.value
-                                    ? _timer.value.isActive
+                            child: GetBuilder(
+                              init: _sessionController,
+                              builder: (controller) => Text(
+                                controller.isSession.value
+                                    ? controller.timer.value.isActive
                                         ? "Stop"
                                         : "Start"
                                     : "Start",
@@ -301,13 +345,8 @@ class FocusPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: () {
-                                if (_inputBreakMin.value > 1) {
-                                  _inputBreakMin.value -= 1;
-                                  _breakMinController
-                                      .jumpToPage(_inputBreakMin.value - 1);
-                                }
-                              },
+                              onTap: () =>
+                                  onTapDecrementBreak(_sessionController),
                               child: Container(
                                 padding: const EdgeInsets.only(bottom: 15.0),
                                 alignment: Alignment.center,
@@ -333,24 +372,22 @@ class FocusPage extends StatelessWidget {
                               options: [
                                 for (int i = 1; i <= 30; i++) i.toString()
                               ],
-                              controller: _breakMinController,
-                              initialValue: _inputBreakMin.value - 1,
+                              controller: _sessionController.breakMinController,
+                              initialValue:
+                                  _sessionController.inputBreakMin.value - 1,
                               onChanged: (index) {
-                                _inputBreakMin.value = index + 1;
-                                _initialSecs.value =
-                                    (_inputBreakMin.value * 60);
+                                _sessionController.inputBreakMin.value =
+                                    index + 1;
+                                _sessionController.initialSecs.value =
+                                    (_sessionController.inputBreakMin.value *
+                                        60);
                               },
                             ),
                           ),
                           Expanded(
                             child: InkWell(
-                              onTap: () {
-                                if (_inputBreakMin.value < 30) {
-                                  _inputBreakMin.value += 1;
-                                  _breakMinController
-                                      .jumpToPage(_inputBreakMin.value - 1);
-                                }
-                              },
+                              onTap: () =>
+                                  onTapIncrementBreak(_sessionController),
                               child: Container(
                                 alignment: Alignment.center,
                                 color: Colors.transparent,
@@ -373,42 +410,14 @@ class FocusPage extends StatelessWidget {
                                 ?.currTheme
                                 .darkButton),
                         child: GestureDetector(
-                          onTap: () {
-                            if (_timer.value.isActive || _isPaused.value) {
-                              if (!_isSession.value) {
-                                _timer.value.cancel();
-                                _timer.value = Timer(Duration.zero, () {});
-                                _initialSecs.value =
-                                    (_inputBreakMin.value * 60);
-                                _sessionSecs.value = _initialSecs.value;
-                              }
-                              _isPaused.value = false;
-                            } else {
-                              _timer.value.cancel();
-                              _isSession.value = false;
-                              _initialSecs.value = (_inputBreakMin.value * 60);
-                              _sessionSecs.value = _initialSecs.value;
-                              _timer.value = Timer.periodic(
-                                  const Duration(seconds: 1), (_) {
-                                _sessionSecs.value -= 1;
-                                if (_sessionSecs.value == 0) {
-                                  _initialSecs.value =
-                                      (_inputTimeMin.value * 60);
-                                  _sessionSecs.value = _initialSecs.value;
-                                  _notificationsController
-                                      .showNotificationInstant("TIME UP!",
-                                          "FINISHED ${_initialSecs.value} SECS");
-                                  _timer.value.cancel();
-                                }
-                              });
-                            }
-                          },
+                          onTap: () => onTapStartBreak(_sessionController),
                           child: Center(
-                            child: Obx(
-                              () => Text(
-                                _isSession.value
+                            child: GetBuilder(
+                              init: _sessionController,
+                              builder: (controller) => Text(
+                                _sessionController.isSession.value
                                     ? "Start Break"
-                                    : _timer.value.isActive
+                                    : _sessionController.timer.value.isActive
                                         ? "Stop Break"
                                         : "Start Break",
                                 style: AppStyles.actionButtonText(context),
@@ -551,7 +560,7 @@ class FocusPage extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      (task.task ?? '') ,
+                      (task.task ?? ''),
                       maxLines: 10,
                       overflow: TextOverflow.ellipsis,
                       style: AppStyles.defaultFont.copyWith(
