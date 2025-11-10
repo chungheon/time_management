@@ -47,15 +47,21 @@ class SessionController extends GetxController {
     timer.value.cancel();
     fetchSession().then((session) async {
       currentSess.value = session;
+      inputBreakMin.value = session.breakInterval ?? 5;
+      breakMinController.jumpToPage(inputBreakMin.value - 1);
       fetchSessionCounters(session).then((counter) {
         sessCounter.value = counter;
         if (counter.isEmpty) {
           currCounter.value = SessionCounter(
               sessId: session.uid!, sessionCount: 0, sessionInterval: 30);
           sessCounter.add(currCounter.value!);
+        } else {
+          currCounter.value = counter.last;
+          inputTimeMin.value = currCounter.value?.sessionInterval ?? 30;
+          timeMinController.jumpToPage(inputTimeMin.value - 1);
         }
-        print(currentSess);
-        print(sessCounter);
+        initialSecs.value = inputTimeMin.value * 60;
+        sessionSecs.value = initialSecs.value;
       }).onError((e, _) {
         //Ignore Error
       });
@@ -72,7 +78,7 @@ class SessionController extends GetxController {
       int now = DateTime.now().millisecondsSinceEpoch - 200;
       if (now >= timerEndTime.value || sessionSecs.value <= 0) {
         timer.value.cancel();
-        endTimer(isSession.value);
+        endTimer(isSession.value, remove: false);
         if (isSession.value) {
           currCounter.value!.sessionCount =
               (currCounter.value!.sessionCount ?? 0) + 1;
@@ -86,16 +92,6 @@ class SessionController extends GetxController {
               (currentSess.value.breakCount ?? 0) + 1;
           _sqlController.updateObject(currentSess.value);
         }
-        _sqlController
-            .rawQuery('SELECT * FROM ${SQLConstants.sessionTable}')
-            .then((result) {
-          print(result);
-          _sqlController
-              .rawQuery('SELECT * FROM ${SQLConstants.sessionCounterTable}')
-              .then((result) {
-            print(result);
-          });
-        });
       } else {
         int secondsLeft = ((timerEndTime.value - now) / 1000).floor();
         if (secondsLeft < sessionSecs.value) {
@@ -105,7 +101,7 @@ class SessionController extends GetxController {
     });
   }
 
-  Future<void> endTimer(bool sessionPress) async {
+  Future<void> endTimer(bool sessionPress, {bool remove = true}) async {
     if ((isSession.value && sessionPress) ||
         (!isSession.value && !sessionPress)) {
       int sessionTime =
@@ -113,7 +109,7 @@ class SessionController extends GetxController {
       initialSecs.value = sessionTime * 60;
       sessionSecs.value = initialSecs.value;
       timer.value.cancel();
-      removeNotification(currentNotifId.value);
+      if (remove) removeNotification(currentNotifId.value);
       update();
     }
   }
@@ -134,9 +130,13 @@ class SessionController extends GetxController {
         : NotificationTextHelper.breakEndBody();
     String payload = isSession.value
         ? NotificationTextHelper.sessionEndPayload(
-            currentSess.value.uid!.toString(), sessionTime.toString())
+            currentSess.value.uid!.toString(),
+            sessionTime.toString(),
+            ((currCounter.value?.sessionCount ?? 0) + 1).toString())
         : NotificationTextHelper.breakEndPayload(
-            currentSess.value.uid!.toString(), sessionTime.toString());
+            currentSess.value.uid!.toString(),
+            sessionTime.toString(),
+            ((currentSess.value.breakCount ?? 0) + 1).toString());
     currentNotifId.value = await createNotification(
         title, body, timerEndTime.value,
         payload: payload);
@@ -146,8 +146,6 @@ class SessionController extends GetxController {
       currentSess.value.breakInterval = sessionTime;
       _sqlController.updateObject(currentSess.value);
     }
-    print(sessCounter);
-    print(currCounter);
     timer.value = createTimerFunc();
     update();
   }
@@ -162,11 +160,25 @@ class SessionController extends GetxController {
     sessionSecs.value = (totalTimeMin * 60).floor();
   }
 
-  Future<Session> fetchSessionWithUid(String uid) async {
-    Session currSess = await fetchSession(uid: uid);
-    sessCounter.value = await fetchSessionCounters(currSess);
-
-    return currSess;
+  Future<void> fetchSessionWithUid(
+      String uid, bool isSession, int interval, int updateTotal) async {
+    currentSess.value = await fetchSession(uid: uid);
+    sessCounter.value = await fetchSessionCounters(currentSess.value);
+    if (isSession) {
+      currCounter.value = await getSessionCounter(interval);
+      if (currCounter.value!.sessionCount == 0) {
+        _sqlController.insertObject(currCounter.value!);
+      }
+      if ((currCounter.value!.sessionCount ?? 0) < updateTotal) {
+        currCounter.value!.sessionCount = updateTotal;
+        _sqlController.updateObject(currCounter.value!);
+      }
+    } else {
+      if ((currentSess.value.breakCount ?? 0) < updateTotal) {
+        currentSess.value.breakCount = updateTotal;
+      }
+      _sqlController.updateObject(currentSess.value);
+    }
   }
 
   Future<List<SessionCounter>> fetchSessionCounters(Session currSession) async {
@@ -177,8 +189,8 @@ class SessionController extends GetxController {
               sqlCol: SQLConstants.colSessionCounterSessId,
             )) ??
             [];
-    return sessionCounter.map<SessionCounter>((sessCounters) {
-      return SessionCounter(sessId: -1);
+    return sessionCounter.map<SessionCounter>((sessCounter) {
+      return SessionCounter.fromSQFLITEMap(sessCounter);
     }).toList();
   }
 
@@ -252,10 +264,12 @@ class SessionController extends GetxController {
     String payload = isSession.value
         ? NotificationTextHelper.sessionEndPayload(
             currentSess.value.uid!.toString(),
-            (initialSecs / 60).floor().toString())
+            (initialSecs / 60).floor().toString(),
+            ((currCounter.value?.sessionCount ?? 0) + 1).toString())
         : NotificationTextHelper.breakEndPayload(
             currentSess.value.uid!.toString(),
-            (initialSecs / 60).floor().toString());
+            (initialSecs / 60).floor().toString(),
+            ((currentSess.value.breakCount ?? 0) + 1).toString());
     currentNotifId.value = await createNotification(
         title, body, timerEndTime.value,
         payload: payload);

@@ -38,6 +38,11 @@ class NotificationsController extends GetxController {
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: selectNotificationStream.add);
     _configureRecievedNotifications();
+    var details =
+        await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+    if (details?.didNotificationLaunchApp ?? false) {
+      _onRecievedNotifications(details!.notificationResponse!);
+    }
   }
 
   Future<void> refreshNotifications(RoutineController routineController,
@@ -115,11 +120,8 @@ class NotificationsController extends GetxController {
     await flutterLocalNotificationsPlugin.cancel(uid);
   }
 
-  void _configureRecievedNotifications() {
-    selectNotificationStream.stream
-        .listen((NotificationResponse? response) async {
-      if (response != null) {
-        List<String> payloadSplit = (response.payload ?? "").split("|");
+  void _onRecievedNotifications(NotificationResponse response){
+    List<String> payloadSplit = (response.payload ?? "").split("|");
         Map<String, String> args = Map.fromEntries(
             payloadSplit.map<MapEntry<String, String>>((String e) {
           List<String> data = e.split(":");
@@ -146,6 +148,13 @@ class NotificationsController extends GetxController {
             );
           }
         }
+  }
+
+  void _configureRecievedNotifications() {
+    selectNotificationStream.stream
+        .listen((NotificationResponse? response) async {
+      if (response != null) {
+        _onRecievedNotifications(response);
       }
     });
   }

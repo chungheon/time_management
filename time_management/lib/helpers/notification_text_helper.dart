@@ -15,11 +15,11 @@ class NotificationTextHelper {
     return "You are well rested! Continue working!";
   }
 
-  static String sessionEndPayload(String sessionUid, String sessionInterval) {
-    return "page:0|route:focus|uid:$sessionUid|session:$sessionInterval";
+  static String sessionEndPayload(String sessionUid, String sessionInterval, String totalSess) {
+    return "page:0|route:focus|uid:$sessionUid|session:$sessionInterval|total:$totalSess";
   }
 
-  static String breakEndPayload(String sessionUid, String breakInterval) {
-    return "page:0|route:focus|uid:$sessionUid|break:$breakInterval";
+  static String breakEndPayload(String sessionUid, String breakInterval, String totalBreak) {
+    return "page:0|route:focus|uid:$sessionUid|break:$breakInterval|total:$totalBreak";
   }
 }

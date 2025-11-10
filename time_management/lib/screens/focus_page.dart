@@ -13,6 +13,7 @@ import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/session_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
+import 'package:time_management/models/session_model.dart';
 import 'package:time_management/models/task_model.dart';
 import 'package:time_management/screens/document_view_page.dart';
 import 'package:time_management/styles.dart';
@@ -125,6 +126,61 @@ class FocusPage extends StatelessWidget {
     }
   }
 
+  void onTapViewStatus(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return Dialog(
+            child: Container(
+              height: 300,
+              padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    DateTimeConstants.days[(DateTimeHelpers.getDayValue(
+                            DateTime.now().dateOnly()))] +
+                        " " +
+                        DateTimeHelpers.getFormattedDate(
+                            DateTime.now().dateOnly()),
+                    style: AppStyles.defaultFont
+                        .copyWith(fontSize: AppFontSizes.header2),
+                  ),
+                  Text(
+                    _sessionController.currentSess.value.breakInterval
+                            .toString() +
+                        " Minute: " +
+                        _sessionController.currentSess.value.breakCount
+                            .toString() +
+                        " Breaks",
+                    style: AppStyles.defaultFont
+                        .copyWith(fontSize: AppFontSizes.header3),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                        itemCount: _sessionController.sessCounter.length,
+                        itemBuilder: (context, index) => _counterListItem(
+                            _sessionController.sessCounter.elementAt(index))),
+                  )
+                ],
+              ),
+            ),
+          );
+        });
+  }
+
+  Widget _counterListItem(SessionCounter counter) {
+    return Container(
+        child: Text(
+      counter.sessionInterval.toString() +
+          " Minute: " +
+          counter.sessionCount.toString() +
+          " Sessions",
+      style: AppStyles.defaultFont.copyWith(fontSize: AppFontSizes.body),
+    ));
+  }
+
   void notificationRoute(BuildContext context) {
     hasFetched.value = true;
     bool hasArgs = ModalRoute.of(context)!.settings.arguments != null;
@@ -133,11 +189,13 @@ class FocusPage extends StatelessWidget {
     }
     Map<String, String> routeArgs =
         ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       String? uid = routeArgs['uid'];
       bool isSession = !(routeArgs['session'] == null);
       bool isBreak = !(routeArgs['break'] == null);
       int totalTime = int.tryParse(routeArgs['session'].toString()) ?? 30;
+      int updateNum = int.tryParse(routeArgs['total'].toString()) ?? 0;
       if (isBreak) {
         totalTime = int.tryParse(routeArgs['break'].toString()) ?? 5;
         _sessionController.inputBreakMin.value = totalTime;
@@ -149,7 +207,8 @@ class FocusPage extends StatelessWidget {
 
       _sessionController.resetTimer(totalTime, !isBreak);
       if (uid != null) {
-        _sessionController.fetchSessionWithUid(uid);
+        _sessionController.fetchSessionWithUid(
+            uid, !isBreak, totalTime, updateNum);
       }
     });
     hasFetched.value = true;
@@ -188,6 +247,16 @@ class FocusPage extends StatelessWidget {
                 _sessionController.removeNotification(
                     _sessionController.currentNotifId.value);
               }),
+          additionalAction: [
+            InkWell(
+              child: const Material(
+                child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Icon(Icons.copy)),
+              ),
+              onTap: () => onTapViewStatus(context),
+            ),
+          ],
         ),
         body: GetBuilder(
             init: _sessionController,

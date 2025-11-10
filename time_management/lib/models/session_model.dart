@@ -94,6 +94,20 @@ class SessionCounter with SQFLiteObject {
   int? sessionCount;
   int? sessionInterval;
 
+  factory SessionCounter.fromSQFLITEMap(Map<String, Object?> queryResult) {
+    int? rsSessId = int.tryParse(
+        queryResult[SQLConstants.colSessionCounterSessId].toString());
+    int? rSessNo = int.tryParse(
+        queryResult[SQLConstants.colSessionCounterSessNo].toString());
+    int? rSessInterval = int.tryParse(
+        queryResult[SQLConstants.colSessionCounterSessInterval].toString());
+    return SessionCounter(
+      sessId: rsSessId ?? -1,
+      sessionCount: rSessNo ?? 0,
+      sessionInterval: rSessInterval ?? 30,
+    );
+  }
+
   @override
   String objTable() {
     return SQLConstants.sessionCounterTable;
