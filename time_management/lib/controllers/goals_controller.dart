@@ -143,6 +143,7 @@ class GoalsController extends GetxController {
     int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
     await updatePlanList(dayPlansList, planDate: now);
     await updatePlanList(dayPlansList, planDate: now + 86400000);
+    update();
   }
 
   Future<void> updatePlanList(RxMap<int, List<DayPlanItem>> dayPlansList,

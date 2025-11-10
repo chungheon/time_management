@@ -13,6 +13,15 @@ class SQLConstants {
           ' ADD COLUMN ' +
           colTaskAlertTime +
           ' INTEGER'
+    ],
+    [
+      createSessionDateIndex,
+    ],
+    [
+      'DROP TABLE IF EXISTS ' + sessionTable,
+      'DROP TABLE IF EXISTS session_tasks',
+      createSessionTable,
+      createSessionCounterTable,
     ]
   ];
   static const String createGoalsTable =
@@ -24,9 +33,8 @@ class SQLConstants {
           ' $colRoutineDesc TEXT, $colRoutineStart INTEGER, $colRoutineEnd INTEGER, $colRoutineSeq INT1 NOT NULL);';
 
   static const String createSessionTable =
-      'CREATE TABLE IF NOT EXISTS $sessionTable($colSessionId INTEGER PRIMARY KEY, $colSessionDate INT NOT NULL,' +
-          '$colSessionNo INT NOT NULL, $colSessionBreak INT NOT NULL, $colSessionInterval INT1 NOT NULL,' +
-          '$colSessionBreakInterval INT1 NOT NULL);';
+      'CREATE TABLE IF NOT EXISTS $sessionTable($colSessionId INTEGER PRIMARY KEY, ' +
+          '$colSessionDate INT, $colSessionBreak INT1, $colSessionBreakInterval INT1);';
 
   static const String createChecklistTable =
       'CREATE TABLE IF NOT EXISTS $checklistTable($colChecklistId INTEGER PRIMARY KEY, $colChecklistDate INTEGER NOT NULL, ' +
@@ -103,21 +111,24 @@ class SQLConstants {
           'REFERENCES $taskTable($colTaskId)' +
           ' ON DELETE CASCADE)';
 
-  static const String createSessionTaskTable =
-      'CREATE TABLE IF NOT EXISTS $sessTaskTable($colSessTaskSessId INTEGER NOT NULL, ' +
-          '$colSessTaskTaskId INTEGER NOT NULL, ' +
-          'UNIQUE ($colSessTaskSessId, $colSessTaskTaskId), ' +
-          'CONSTRAINT $sessTaskSessFK ' +
-          'FOREIGN KEY ($colSessTaskSessId) ' +
+  static const String createSessionCounterTable =
+      'CREATE TABLE IF NOT EXISTS $sessionCounterTable( ' +
+          '$colSessionCounterSessId INT NOT NULL, ' +
+          '$colSessionCounterSessInterval INT1, ' +
+          '$colSessionCounterSessNo INT1, ' +
+          'CONSTRAINT $sessCounterSessFK ' +
+          'FOREIGN KEY ($colSessionCounterSessId) ' +
           'REFERENCES $sessionTable($colSessionId)' +
-          ' ON DELETE CASCADE, ' +
-          'CONSTRAINT $sessTaskTaskFK ' +
-          'FOREIGN KEY ($colSessTaskTaskId) ' +
-          'REFERENCES $taskTable($colTaskId)' +
           ' ON DELETE CASCADE)';
 
   static const String selectAllGoalsStmt =
       "SELECT * FROM ${SQLConstants.goalTable} ORDER BY ${SQLConstants.colGoalId}";
+
+  static const String createSessionDateIndex = 'CREATE INDEX IF NOT EXISTS ' +
+      ixSessionDate +
+      ' ON ' +
+      sessionTable +
+      '( $colSessionDate)';
 
   static const String mainDatabaseAlias = "main_db";
 
@@ -361,39 +372,34 @@ class SQLConstants {
 
   //Type - INT
   static const String colSessionDate = "date";
-  static const String colSessionNo = "num";
-  static const String colSessionBreak = "break";
-
-  //Type - INT1
-  static const String colSessionInterval = "session_interval";
+  static const String colSessionBreak = "num_break";
   static const String colSessionBreakInterval = "break_interval";
 
+  //NON-CLUSTERED INDEX
+  static const String ixSessionDate = 'ix_session_date';
+
   //List of all Manual session table columns
-  static const List<String> sessionCols = [
-    colSessionDate,
-    colSessionNo,
-    colSessionBreak,
-    colSessionInterval,
-    colSessionBreakInterval,
-  ];
+  static const List<String> sessionCols = [colSessionDate, colSessionBreak];
 
   /*
-    Session Task Table (Look Up Table)
+    Session Counter Table (Look Up Table)
 
-    UNIQUE - (colSessTaskTaskId, colSessTaskSessId)
+    UNIQUE - (colSessionCounterSessId)
   */
-  static const String sessTaskTable = "session_tasks";
+  static const String sessionCounterTable = "session_counter";
+
+  //Type - INT1
+  static const String colSessionCounterSessInterval = "sess_interval";
+  static const String colSessionCounterSessNo = "num_session";
 
   //Constraints
-  static const String sessTaskTaskFK = "fk_sess_task_task";
-  static const String sessTaskSessFK = "fk_sess_task_sess";
+  static const String sessCounterSessFK = "fk_sess_counter_sess";
   //Foreign Key - Linked to Session Table Primary Key id
-  static const String colSessTaskTaskId = "task_uid";
-  static const String colSessTaskSessId = "sess_uid";
+  static const String colSessionCounterSessId = "sess_uid";
 
   //List of all Manual doc task table columns
-  static const List<String> sessTaskCols = [
-    colSessTaskTaskId,
-    colSessTaskSessId
+  static const List<String> sessionCounterCols = [
+    colSessionCounterSessInterval,
+    colSessionCounterSessNo,
   ];
 }

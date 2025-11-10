@@ -6,10 +6,12 @@ import 'package:get/get.dart';
 import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
+import 'package:time_management/controllers/session_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/routine_model.dart';
 import 'package:time_management/models/task_model.dart';
+import 'package:time_management/screens/focus_page.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationsController extends GetxController {
@@ -36,9 +38,6 @@ class NotificationsController extends GetxController {
     await flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: selectNotificationStream.add);
     _configureRecievedNotifications();
-    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
-    // setupRoutineNotifications(
-    //     routineController.routineList, goalsController.dayPlansList[now] ?? []);
   }
 
   Future<void> refreshNotifications(RoutineController routineController,
@@ -121,20 +120,31 @@ class NotificationsController extends GetxController {
         .listen((NotificationResponse? response) async {
       if (response != null) {
         List<String> payloadSplit = (response.payload ?? "").split("|");
+        Map<String, String> args = Map.fromEntries(
+            payloadSplit.map<MapEntry<String, String>>((String e) {
+          List<String> data = e.split(":");
+          if (data.length == 2) {
+            return MapEntry(data[0], data[1]);
+          } else {
+            return MapEntry(e, e);
+          }
+        }));
         if (response.payload != null) {
-          Get.offAllNamed(
-            '/',
-            arguments: Map.fromEntries(
-              payloadSplit.map<MapEntry<String, String>>((String e) {
-                List<String> data = e.split(":");
-                if (data.length == 2) {
-                  return MapEntry(data[0], data[1]);
-                } else {
-                  return MapEntry(e, e);
-                }
-              }),
-            ),
-          );
+          if (args['route'] != null) {
+            Get.offAllNamed(
+              '/',
+            );
+            switch (args['route']) {
+              case 'focus':
+                Get.lazyPut(() => SessionController());
+                Get.to(() => FocusPage(), arguments: args);
+            }
+          } else {
+            Get.offAllNamed(
+              '/',
+              arguments: args,
+            );
+          }
         }
       }
     });
@@ -161,7 +171,8 @@ class NotificationsController extends GetxController {
   }
 
   Future<int> getActiveNotificationsId() async {
-    List<PendingNotificationRequest> sortedList = await getActiveNotifications();
+    List<PendingNotificationRequest> sortedList =
+        await getActiveNotifications();
     List<int> sortedId = sortedList.map((element) => element.id).toList()
       ..sort();
     return sortedList.isEmpty
@@ -169,7 +180,7 @@ class NotificationsController extends GetxController {
         : (min(sortedId.first, sortedId.last) - 1);
   }
 
-  Future<void> scheduleAlarm(String title, String body, DateTime time,
+  Future<int> scheduleAlarm(String title, String body, DateTime time,
       {String? payload}) async {
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails('Scheduled Alarm', 'Alarm',
@@ -184,8 +195,10 @@ class NotificationsController extends GetxController {
         .subtract(date.timeZoneOffset);
     final NotificationDetails notificationDetails =
         NotificationDetails(android: androidNotificationDetails);
+
+    int id = await getActiveNotificationsId();
     await flutterLocalNotificationsPlugin.zonedSchedule(
-      await getActiveNotificationsId(),
+      id,
       title,
       body,
       scheduled,
@@ -193,6 +206,7 @@ class NotificationsController extends GetxController {
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       payload: payload,
     );
+    return id;
   }
 
   Future<int> scheduleRoutine(Routine routine, {String? payload}) async {

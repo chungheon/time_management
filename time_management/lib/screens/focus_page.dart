@@ -10,11 +10,9 @@ import 'package:time_management/constants/effect_constants.dart';
 import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goal_view_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
-import 'package:time_management/controllers/notifications_controller.dart';
 import 'package:time_management/controllers/session_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
-import 'package:time_management/models/session_model.dart';
 import 'package:time_management/models/task_model.dart';
 import 'package:time_management/screens/document_view_page.dart';
 import 'package:time_management/styles.dart';
@@ -22,13 +20,12 @@ import 'package:time_management/widgets/page_header_widget.dart';
 import 'package:time_management/widgets/scrolling_options_widget.dart';
 
 class FocusPage extends StatelessWidget {
-  FocusPage({super.key, this.returnRoute, required this.dayPlanItems});
-  final NotificationsController _notificationsController = Get.find();
+  FocusPage({super.key, this.returnRoute});
   final GoalsController _goalsController = Get.find();
   final SessionController _sessionController = Get.find();
   final GoalViewController _goalViewController = Get.find();
   final String? returnRoute;
-  final List<DayPlanItem> dayPlanItems;
+  final RxBool hasFetched = false.obs;
 
   static final List<Image> _timerImages = [
     Image.asset("assets/png/0.png"),
@@ -70,20 +67,11 @@ class FocusPage extends StatelessWidget {
     );
   }
 
-  void onTapTimer(SessionController controller) {
-    if (controller.timer.value.isActive) {
-      controller.isPaused.value = true;
-      controller.timer.value.cancel();
+  void onTapTimer(SessionController controller) async {
+    if (controller.isPaused.value) {
+      controller.resumeTimer();
     } else {
-      controller.isPaused.value = false;
-      controller.timer.value = Timer.periodic(const Duration(seconds: 1), (_) {
-        controller.sessionSecs.value -= 1;
-        if (controller.sessionSecs.value == 0) {
-          controller.initialSecs.value = (controller.inputTimeMin.value * 60);
-          controller.sessionSecs.value = controller.initialSecs.value;
-          controller.timer.value.cancel();
-        }
-      });
+      controller.pauseTimer();
     }
   }
 
@@ -112,7 +100,7 @@ class FocusPage extends StatelessWidget {
   }
 
   void onTapIncrementBreak(SessionController controller) {
-    if (controller.inputBreakMin.value > controller.breakMax) {
+    if (controller.inputBreakMin.value < controller.breakMax) {
       controller.inputBreakMin.value += 1;
       controller.breakMinController
           .jumpToPage(controller.inputBreakMin.value - 1);
@@ -120,63 +108,58 @@ class FocusPage extends StatelessWidget {
   }
 
   void onTapStartTimer(SessionController controller) {
-    if (controller.timer.value.isActive || controller.isPaused.value) {
-      if (controller.isSession.value) {
-        controller.timer.value.cancel();
-        controller.timer.value = Timer(Duration.zero, () {});
-        controller.initialSecs.value = (controller.inputTimeMin.value * 60);
-        controller.sessionSecs.value = controller.initialSecs.value;
-      }
-      controller.isPaused.value = false;
+    if (controller.timer.value.isActive) {
+      controller.endTimer(true);
     } else {
-      controller.timer.value.cancel();
       controller.isSession.value = true;
-      controller.initialSecs.value = (controller.inputTimeMin.value);
-      controller.sessionSecs.value = controller.initialSecs.value;
-      controller.timer.value = Timer.periodic(const Duration(seconds: 1), (_) {
-        controller.sessionSecs.value -= 1;
-        if (controller.sessionSecs.value == 0) {
-          controller.initialSecs.value = (controller.inputTimeMin.value * 60);
-          controller.sessionSecs.value = controller.initialSecs.value;
-          controller.sessionComplete(controller.latestSess);
-          controller.timer.value.cancel();
-          controller.update();
-        }
-      });
+      controller.startTimer();
     }
-    controller.update();
   }
 
   void onTapStartBreak(SessionController controller) {
-    if (controller.timer.value.isActive || controller.isPaused.value) {
-      if (!controller.isSession.value) {
-        controller.timer.value.cancel();
-        controller.timer.value = Timer(Duration.zero, () {});
-        controller.initialSecs.value = (controller.inputBreakMin.value * 60);
-        controller.sessionSecs.value = controller.initialSecs.value;
-      }
-      controller.isPaused.value = false;
+    if (controller.timer.value.isActive) {
+      controller.endTimer(false);
     } else {
-      controller.timer.value.cancel();
       controller.isSession.value = false;
-      controller.initialSecs.value = (controller.inputBreakMin.value);
-      controller.sessionSecs.value = controller.initialSecs.value;
-      controller.timer.value = Timer.periodic(const Duration(seconds: 1), (_) {
-        controller.sessionSecs.value -= 1;
-        if (controller.sessionSecs.value == 0) {
-          controller.initialSecs.value = (controller.inputTimeMin.value * 60);
-          controller.sessionSecs.value = controller.initialSecs.value;
-          controller.breakComplete(controller.latestSess);
-          controller.timer.value.cancel();
-          controller.update();
-        }
-      });
+      controller.startTimer();
     }
-    controller.update();
+  }
+
+  void notificationRoute(BuildContext context) {
+    hasFetched.value = true;
+    bool hasArgs = ModalRoute.of(context)!.settings.arguments != null;
+    if (!hasArgs) {
+      return;
+    }
+    Map<String, String> routeArgs =
+        ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      String? uid = routeArgs['uid'];
+      bool isSession = !(routeArgs['session'] == null);
+      bool isBreak = !(routeArgs['break'] == null);
+      int totalTime = int.tryParse(routeArgs['session'].toString()) ?? 30;
+      if (isBreak) {
+        totalTime = int.tryParse(routeArgs['break'].toString()) ?? 5;
+        _sessionController.inputBreakMin.value = totalTime;
+      }
+
+      if (isSession) {
+        _sessionController.inputTimeMin.value = totalTime;
+      }
+
+      _sessionController.resetTimer(totalTime, !isBreak);
+      if (uid != null) {
+        _sessionController.fetchSessionWithUid(uid);
+      }
+    });
+    hasFetched.value = true;
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!hasFetched.value) {
+      notificationRoute(context);
+    }
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (pop, _) {
@@ -188,6 +171,8 @@ class FocusPage extends StatelessWidget {
                 msg: "Exit Focus Mode?",
                 onConfirm: () async {
                   _sessionController.timer.value.cancel();
+                  _sessionController.removeNotification(
+                      _sessionController.currentNotifId.value);
                 }),
           );
         }
@@ -200,12 +185,14 @@ class FocusPage extends StatelessWidget {
               msg: "Exit Focus Mode?",
               onConfirm: () async {
                 _sessionController.timer.value.cancel();
+                _sessionController.removeNotification(
+                    _sessionController.currentNotifId.value);
               }),
         ),
         body: GetBuilder(
-            init: _goalsController,
+            init: _sessionController,
             builder: (controller) {
-              return ListView(
+              return Column(
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -215,14 +202,14 @@ class FocusPage extends StatelessWidget {
                       ),
                       Obx(
                         () => GestureDetector(
-                          onTap: () => onTapTimer(_sessionController),
+                          onTap: () => onTapTimer(controller),
                           child: Stack(
                             children: [
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   ..._generateTimer(
-                                      _sessionController.sessionSecs.value),
+                                      controller.sessionSecs.value),
                                 ],
                               ),
                               Positioned(
@@ -283,22 +270,18 @@ class FocusPage extends StatelessWidget {
                               options: [
                                 for (int i = 1; i <= 120; i++) i.toString()
                               ],
-                              controller: _sessionController.timeMinController,
-                              initialValue:
-                                  _sessionController.inputTimeMin.value - 1,
+                              controller: controller.timeMinController,
+                              initialValue: controller.inputTimeMin.value - 1,
                               onChanged: (index) {
-                                _sessionController.inputTimeMin.value =
-                                    index + 1;
-                                _sessionController.initialSecs.value =
-                                    (_sessionController.inputTimeMin.value *
-                                        60);
+                                controller.inputTimeMin.value = index + 1;
+                                controller.initialSecs.value =
+                                    (controller.inputTimeMin.value * 60);
                               },
                             ),
                           ),
                           Expanded(
                             child: InkWell(
-                              onTap: () =>
-                                  onTapIncrementTimer(_sessionController),
+                              onTap: () => onTapIncrementTimer(controller),
                               child: Container(
                                 alignment: Alignment.center,
                                 color: Colors.transparent,
@@ -314,17 +297,17 @@ class FocusPage extends StatelessWidget {
                       const SizedBox(
                         height: 10.0,
                       ),
-                      Container(
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                            color: StateContainer.of(Get.context!)
-                                ?.currTheme
-                                .darkButton),
-                        child: GestureDetector(
-                          onTap: () => onTapStartTimer(_sessionController),
+                      GestureDetector(
+                        onTap: () => onTapStartTimer(controller),
+                        child: Container(
+                          height: 50.0,
+                          decoration: BoxDecoration(
+                              color: StateContainer.of(Get.context!)
+                                  ?.currTheme
+                                  .darkButton),
                           child: Center(
                             child: GetBuilder(
-                              init: _sessionController,
+                              init: controller,
                               builder: (controller) => Text(
                                 controller.isSession.value
                                     ? controller.timer.value.isActive
@@ -345,8 +328,7 @@ class FocusPage extends StatelessWidget {
                         children: [
                           Expanded(
                             child: InkWell(
-                              onTap: () =>
-                                  onTapDecrementBreak(_sessionController),
+                              onTap: () => onTapDecrementBreak(controller),
                               child: Container(
                                 padding: const EdgeInsets.only(bottom: 15.0),
                                 alignment: Alignment.center,
@@ -372,22 +354,18 @@ class FocusPage extends StatelessWidget {
                               options: [
                                 for (int i = 1; i <= 30; i++) i.toString()
                               ],
-                              controller: _sessionController.breakMinController,
-                              initialValue:
-                                  _sessionController.inputBreakMin.value - 1,
+                              controller: controller.breakMinController,
+                              initialValue: controller.inputBreakMin.value - 1,
                               onChanged: (index) {
-                                _sessionController.inputBreakMin.value =
-                                    index + 1;
-                                _sessionController.initialSecs.value =
-                                    (_sessionController.inputBreakMin.value *
-                                        60);
+                                controller.inputBreakMin.value = index + 1;
+                                controller.initialSecs.value =
+                                    (controller.inputBreakMin.value * 60);
                               },
                             ),
                           ),
                           Expanded(
                             child: InkWell(
-                              onTap: () =>
-                                  onTapIncrementBreak(_sessionController),
+                              onTap: () => onTapIncrementBreak(controller),
                               child: Container(
                                 alignment: Alignment.center,
                                 color: Colors.transparent,
@@ -403,14 +381,14 @@ class FocusPage extends StatelessWidget {
                       const SizedBox(
                         height: 10.0,
                       ),
-                      Container(
-                        height: 50.0,
-                        decoration: BoxDecoration(
-                            color: StateContainer.of(Get.context!)
-                                ?.currTheme
-                                .darkButton),
-                        child: GestureDetector(
-                          onTap: () => onTapStartBreak(_sessionController),
+                      GestureDetector(
+                        onTap: () => onTapStartBreak(controller),
+                        child: Container(
+                          height: 50.0,
+                          decoration: BoxDecoration(
+                              color: StateContainer.of(Get.context!)
+                                  ?.currTheme
+                                  .darkButton),
                           child: Center(
                             child: GetBuilder(
                               init: _sessionController,
@@ -431,17 +409,19 @@ class FocusPage extends StatelessWidget {
                   const SizedBox(
                     height: 30.0,
                   ),
-                  ...[
-                    for (var dayPlanItem in dayPlanItems)
-                      Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                          ),
-                          child: _dayPlanListItem(dayPlanItem, context))
-                  ],
-                  const SizedBox(
-                    height: 30.0,
-                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: controller.items.length,
+                      itemBuilder: (context, index) {
+                        return Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                            ),
+                            child: _dayPlanListItem(
+                                controller.items[index], context));
+                      },
+                    ),
+                  )
                 ],
               );
             }),
@@ -583,7 +563,6 @@ class FocusPage extends StatelessWidget {
                         onTap: () {
                           Get.to(() => DocumentViewPage(task: task));
                         },
-                        onLongPress: () {},
                         child: Container(
                           width: 45.0,
                           height: 45.0,

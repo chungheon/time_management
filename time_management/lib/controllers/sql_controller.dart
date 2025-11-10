@@ -16,10 +16,8 @@ class SQLController extends GetxController {
 
     var path = join(await getDatabasesPath(), dbName);
     var archive = join(await getDatabasesPath(), archiveDb);
-    // await databaseFactory.deleteDatabase(path);
-    // await databaseFactory.deleteDatabase(archive);
     final database =
-        await openDatabase(path, version: 2, onConfigure: (Database db) async {
+        await openDatabase(path, version: 4, onConfigure: (Database db) async {
       await db.execute('PRAGMA foreign_keys = ON');
     }, onCreate: (db, version) {
       db.execute(SQLConstants.createGoalsTable);
@@ -32,7 +30,8 @@ class SQLController extends GetxController {
       db.execute(SQLConstants.createRoutineTable);
       db.execute(SQLConstants.createChecklistTable);
       db.execute(SQLConstants.createSessionTable);
-      db.execute(SQLConstants.createSessionTaskTable);
+      db.execute(SQLConstants.createSessionCounterTable);
+      db.execute(SQLConstants.createSessionDateIndex);
     }, onOpen: (db) async {
       db.execute(SQLConstants.createGoalsTable);
       db.execute(SQLConstants.createTagsTable);
@@ -43,7 +42,8 @@ class SQLController extends GetxController {
       db.execute(SQLConstants.createRoutineTable);
       db.execute(SQLConstants.createChecklistTable);
       db.execute(SQLConstants.createSessionTable);
-      db.execute(SQLConstants.createSessionTaskTable);
+      db.execute(SQLConstants.createSessionCounterTable);
+      db.execute(SQLConstants.createSessionDateIndex);
     }, onUpgrade: (db, oldVersion, newVersion) {
       if (newVersion - 1 > SQLConstants.upgrades.length) {
         return;
@@ -55,6 +55,7 @@ class SQLController extends GetxController {
         for (int i = 0; i < upgrades.length; i++) {
           db.execute(upgrades[i]);
         }
+        
       }
     });
     _archiveDatabase =
@@ -183,6 +184,15 @@ class SQLController extends GetxController {
     var result =
         await _database?.insert(insertObj.objTable(), insertObj.toMapSQFLITE());
     return result;
+  }
+
+  Future<Map<String, Object?>> fetchSingleRow(String query) async {
+    return await rawQuery(query).then((result) {
+      if (result?.isEmpty ?? true) {
+        return {};
+      }
+      return result!.first;
+    });
   }
 
   Future<int?> insertOrUpdateObject(SQFLiteObject insertObj) async {

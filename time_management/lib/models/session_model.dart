@@ -4,38 +4,32 @@ class Session with SQFLiteObject {
   Session({
     required this.uid,
     this.date,
-    this.sessions,
-    this.breaks,
-    this.sessInterval,
+    this.breakCount,
     this.breakInterval,
   });
   final int? uid;
   int? date;
-  int? sessions;
-  int? breaks;
-  int? sessInterval;
+  int? breakCount;
   int? breakInterval;
-  List<int> linked = [];
+
+  List<SessionCounter> linked = [];
 
   factory Session.fromSQFLITEMap(Map<String, Object?> queryResult) {
     int? rUid = int.tryParse(queryResult[SQLConstants.colSessionId].toString());
+    if (rUid == null) {
+      throw Exception("Unable to create Session Object");
+    }
     int? rDate =
         int.tryParse(queryResult[SQLConstants.colSessionDate].toString());
-    int? rSessions =
-        int.tryParse(queryResult[SQLConstants.colSessionNo].toString());
-    int? rBreaks =
+    int? rBreakNo =
         int.tryParse(queryResult[SQLConstants.colSessionBreak].toString());
-    int? rSessInterval =
-        int.tryParse(queryResult[SQLConstants.colSessionInterval].toString());
     int? rBreakInterval = int.tryParse(
         queryResult[SQLConstants.colSessionBreakInterval].toString());
 
     return Session(
       uid: rUid,
       date: rDate,
-      sessions: rSessions,
-      sessInterval: rSessInterval,
-      breaks: rBreaks,
+      breakCount: rBreakNo,
       breakInterval: rBreakInterval,
     );
   }
@@ -43,33 +37,23 @@ class Session with SQFLiteObject {
   void updateFromSQFLITEMap(Map<String, Object?> queryResult) {
     int? rDate =
         int.tryParse(queryResult[SQLConstants.colSessionDate].toString());
-    int? rSessions =
-        int.tryParse(queryResult[SQLConstants.colSessionNo].toString());
-    int? rBreaks =
+    int? rBreakNo =
         int.tryParse(queryResult[SQLConstants.colSessionBreak].toString());
-    int? rSessInterval =
-        int.tryParse(queryResult[SQLConstants.colSessionInterval].toString());
     int? rBreakInterval = int.tryParse(
         queryResult[SQLConstants.colSessionBreakInterval].toString());
     date = rDate;
-    sessions = rSessions;
-    breaks = rBreaks;
-    sessInterval = rSessInterval;
+    breakCount = rBreakNo;
     breakInterval = rBreakInterval;
   }
 
   void update({
     int? uid,
     int? date,
-    int? sessions,
-    int? breaks,
-    int? sessInterval,
+    int? breakCount,
     int? breakInterval,
   }) {
     this.date = date ?? this.date;
-    this.sessions = sessions ?? this.sessions;
-    this.breaks = breaks ?? this.breaks;
-    this.sessInterval = sessInterval ?? this.sessInterval;
+    this.breakCount = breakCount ?? this.breakCount;
     this.breakInterval = breakInterval ?? this.breakInterval;
   }
 
@@ -78,32 +62,56 @@ class Session with SQFLiteObject {
     if ((uid ?? -1) < 0) {
       return {
         SQLConstants.colSessionDate: date,
-        SQLConstants.colSessionNo: sessions,
-        SQLConstants.colSessionBreak: breaks,
-        SQLConstants.colSessionInterval: sessInterval,
+        SQLConstants.colSessionBreak: breakCount,
         SQLConstants.colSessionBreakInterval: breakInterval,
       };
     }
     return {
       SQLConstants.colSessionId: uid,
       SQLConstants.colSessionDate: date,
-      SQLConstants.colSessionNo: sessions,
-      SQLConstants.colSessionBreak: breaks,
-      SQLConstants.colSessionInterval: sessInterval,
+      SQLConstants.colSessionBreak: breakCount,
       SQLConstants.colSessionBreakInterval: breakInterval,
     };
   }
 
   @override
   String objTable() {
-    return SQLConstants.docTable;
+    return SQLConstants.sessionTable;
   }
 
   @override
   String toString() {
     // ignore: prefer_adjacent_string_concatenation
-    return 'Session{${SQLConstants.colSessionId}: $uid, ${SQLConstants.colSessionNo}: $sessions,' +
-        ' ${SQLConstants.colSessionBreak}: $breaks, ${SQLConstants.colSessionInterval}: $sessInterval,' +
-        ' ${SQLConstants.colSessionBreakInterval}: $breakInterval, linked: $linked}';
+    return 'Session{${SQLConstants.colSessionId}: $uid, ${SQLConstants.colSessionDate} : $date, ' +
+        '${SQLConstants.colSessionBreak}: $breakCount, ${SQLConstants.colSessionBreakInterval}: $breakInterval, linked: $linked}';
+  }
+}
+
+class SessionCounter with SQFLiteObject {
+  SessionCounter(
+      {required this.sessId, this.sessionCount, this.sessionInterval});
+  int sessId;
+  int? sessionCount;
+  int? sessionInterval;
+
+  @override
+  String objTable() {
+    return SQLConstants.sessionCounterTable;
+  }
+
+  @override
+  Map<String, dynamic> toMapSQFLITE() {
+    return {
+      SQLConstants.colSessionCounterSessId: sessId,
+      SQLConstants.colSessionCounterSessNo: sessionCount,
+      SQLConstants.colSessionCounterSessInterval: sessionInterval
+    };
+  }
+
+  @override
+  String toString() {
+    // ignore: prefer_adjacent_string_concatenation
+    return 'Session{${SQLConstants.colSessionCounterSessId}: $sessId, ${SQLConstants.colSessionCounterSessNo}: $sessionCount, ' +
+        '${SQLConstants.colSessionCounterSessInterval}: $sessionInterval}';
   }
 }

@@ -43,7 +43,6 @@ Future<void> initNotifications() async {
   Get.put(routineController, permanent: true);
   Get.put(notificationsController, permanent: true);
   Get.put(goalsController, permanent: true);
-  Get.lazyPut(() => SessionController());
   await routineController.init();
   notificationsController.init(routineController, goalsController);
 }

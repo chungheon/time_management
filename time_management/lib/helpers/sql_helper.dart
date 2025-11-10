@@ -137,9 +137,8 @@ class SQLHelper {
     return selectStmt + " AND ${SQLConstants.colTaskActionDate} <= $endDate))";
   }
 
-  static String selectSessionLastDate() {
-    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
-    return "SELECT * FROM ${SQLConstants.sessionTable} WHERE ${SQLConstants.colSessionDate} > $now";
+  static String selectSessionByDate(int now) {
+    return "SELECT * FROM ${SQLConstants.sessionTable} WHERE ${SQLConstants.colSessionDate} == $now";
   }
 
   static String selectTaskById(int taskUid) {
