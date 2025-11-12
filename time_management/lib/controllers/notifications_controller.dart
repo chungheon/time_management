@@ -140,7 +140,8 @@ class NotificationsController extends GetxController {
         switch (args['route']) {
           case 'focus':
             Get.lazyPut(() => SessionController());
-            Get.to(() => FocusPage(), arguments: args);
+            Get.to(() => FocusPage());
+            break;
         }
       } else {
         Get.offAllNamed(

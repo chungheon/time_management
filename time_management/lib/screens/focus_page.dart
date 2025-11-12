@@ -29,7 +29,6 @@ class FocusPage extends StatelessWidget {
   final SessionController _sessionController = Get.find();
   final GoalViewController _goalViewController = Get.find();
   final String? returnRoute;
-  final RxBool hasFetched = false.obs;
 
   static final List<Image> _timerImages = [
     Image.asset("assets/png/0.png"),
@@ -185,45 +184,9 @@ class FocusPage extends StatelessWidget {
     ));
   }
 
-  void notificationRoute(BuildContext context) {
-    hasFetched.value = true;
-    bool hasArgs = ModalRoute.of(context)!.settings.arguments != null;
-    if (!hasArgs) {
-      _sessionController.checkPrefs();
-      return;
-    }
-    Map<String, String> routeArgs =
-        ModalRoute.of(context)!.settings.arguments as Map<String, String>;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      String? uid = routeArgs['uid'];
-      bool isSession = !(routeArgs['session'] == null);
-      bool isBreak = !(routeArgs['break'] == null);
-      int totalTime = int.tryParse(routeArgs['session'].toString()) ?? 30;
-      int updateNum = int.tryParse(routeArgs['total'].toString()) ?? 0;
-      if (isBreak) {
-        totalTime = int.tryParse(routeArgs['break'].toString()) ?? 5;
-        _sessionController.inputBreakMin.value = totalTime;
-      }
-
-      if (isSession) {
-        _sessionController.inputTimeMin.value = totalTime;
-      }
-
-      _sessionController.resetTimer(totalTime, !isBreak);
-      if (uid != null) {
-        _sessionController.fetchSessionWithUid(
-            uid, !isBreak, totalTime, updateNum);
-      }
-    });
-    hasFetched.value = true;
-  }
 
   @override
   Widget build(BuildContext context) {
-    if (!hasFetched.value) {
-      notificationRoute(context);
-    }
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (pop, _) {

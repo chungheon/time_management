@@ -60,6 +60,7 @@ class SessionController extends GetxController {
         }
         initialSecs.value = inputTimeMin.value * 60;
         sessionSecs.value = initialSecs.value;
+        checkPrefs();
       }).onError((e, _) {
         //Ignore Error
       });
@@ -101,7 +102,6 @@ class SessionController extends GetxController {
               currentSess.value.breakInterval ??
               5) *
           60;
-      print(initialSecs / 60);
       breakMinController.jumpToPage((initialSecs / 60).floor() - 1);
     }
     if (cache[SharedPreferencesController.allowedList.elementAt(1)] == 'true') {
@@ -122,8 +122,6 @@ class SessionController extends GetxController {
         this.sessionSecs.value = 0;
         timer.value.cancel();
         timer.value = createTimerFunc();
-        cache[SharedPreferencesController.allowedList.elementAt(1)] = 'false';
-        updateSharedPref(cache);
       }
     } else if (cache[SharedPreferencesController.allowedList.elementAt(1)] ==
         'paused') {
@@ -137,9 +135,8 @@ class SessionController extends GetxController {
       this.isPaused.value = true;
       timer.value.cancel();
       timer.value = createTimerFunc();
-    }else{
+    } else {
       this.sessionSecs.value = initialSecs.value;
-      
     }
     update();
   }
@@ -274,6 +271,11 @@ class SessionController extends GetxController {
       }
       _sqlController.updateObject(currentSess.value);
     }
+    for (String text in SharedPreferencesController.allowedList) {
+      cache[text] = (await _sharedPreferencesController.getValue(text)) ?? '';
+    }
+    cache[SharedPreferencesController.allowedList.elementAt(1)] = "false";
+    updateSharedPref(cache);
   }
 
   Future<List<SessionCounter>> fetchSessionCounters(Session currSession) async {
