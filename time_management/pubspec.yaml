@@ -1,7 +1,7 @@
 name: time_management
 description: "App that helps you organize your day."
 publish_to: 'none'
-version: 0.2.0
+version: 0.2.1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -16,8 +16,12 @@ dependencies:
   fluttertoast: ^8.2.12
   get: ^4.7.2
   intl: ^0.20.2
-  open_file_plus: ^3.4.1
+  open_file_plus:
+    git:
+      url: https://github.com/postflow/open_file_plus.git
+      ref: main
   path: ^1.9.1
+  shared_preferences: ^2.5.3
   sqflite: ^2.4.2
   timezone: ^0.10.1
   url_launcher: ^6.3.2
@@ -32,6 +36,8 @@ flutter:
   assets:
     - assets/
     - assets/icons/
+    - assets/png/
+
   fonts:
   - family:  AppIcons
     fonts:

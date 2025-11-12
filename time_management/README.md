@@ -1,3 +1,3 @@
 # time_management
 
-A new Flutter project.
+An app for tracking your daily tasks, and routines you wish to make a habit.
