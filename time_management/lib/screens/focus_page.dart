@@ -13,6 +13,7 @@ import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goal_view_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/session_controller.dart';
+import 'package:time_management/controllers/view_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/session_model.dart';
@@ -129,10 +130,10 @@ class FocusPage extends StatelessWidget {
   }
 
   void onTapViewStatus(BuildContext context) {
-    String title = DateTimeConstants
-            .days[(DateTimeHelpers.getDayValue(DateTime.now().dateOnly()))] +
+    DateTime now = DateTime.now().dateOnly();
+    String title = DateTimeHelpers.getDayValueStr(now) +
         " " +
-        DateTimeHelpers.getFormattedDate(DateTime.now().dateOnly());
+        DateTimeHelpers.getFormattedDate(now);
     showDialog(
         context: context,
         builder: (BuildContext context) {

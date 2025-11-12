@@ -39,6 +39,9 @@ class TaskViewCalendarWidget extends StatelessWidget {
             .dateOnly()
             .difference(dateNow)
             .inDays;
+        if(dateDiff < 0){
+          continue;
+        }
         if (_dayTasksList[dateDiff] == null) {
           _dayTasksList[dateDiff] = [task];
         } else {
@@ -370,8 +373,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
                           ],
                         ),
                   Text(
-                    DateTimeConstants
-                        .days[DateTimeHelpers.getDayValue(diffDate)]
+                    DateTimeHelpers.getDayValueStr(diffDate)
                         .toLowerCase()
                         .substring(0, 3),
                     style: AppStyles.defaultFont.copyWith(

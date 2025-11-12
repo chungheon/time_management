@@ -3,18 +3,18 @@ import 'package:intl/intl.dart';
 import 'package:time_management/constants/date_time_constants.dart';
 
 class DateTimeHelpers {
-  static int getDayValue(DateTime time) {
-    DateTime gmtTime = DateTime.fromMillisecondsSinceEpoch(
-        DateTimeConstants.monTimeStampGMT,
-        isUtc: true);
-
-    int timeDiff =
-        (gmtTime.millisecondsSinceEpoch - time.millisecondsSinceEpoch).abs();
-    double timeDiffSeconds = timeDiff / 1000;
-    int days = (timeDiffSeconds / DateTimeConstants.secsADay).floor();
-    return days % 7;
+  static String getDayValueStr(DateTime date){
+    return DateTimeConstants.days[((((DateTime.fromMillisecondsSinceEpoch(
+                                DateTimeConstants.monTimeStampGMT,
+                                isUtc: false)
+                            .millisecondsSinceEpoch -
+                        date.millisecondsSinceEpoch) /
+                    1000) /
+                DateTimeConstants.secsADay)
+            .floor()
+            .abs() %
+        7)];
   }
-
   static List<String> dateFormats = ['dd/MM/yy', 'dd/MM/yyyy'];
 
   static DateTime? tryParse(

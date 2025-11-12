@@ -3,9 +3,7 @@ import 'package:get/get.dart';
 import 'package:time_management/controllers/document_viewer_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
-import 'package:time_management/controllers/session_controller.dart';
 import 'package:time_management/controllers/view_controller.dart';
-import 'package:time_management/screens/focus_page.dart';
 import 'package:time_management/screens/goals_page.dart';
 import 'package:time_management/screens/overview_page..dart';
 import 'package:time_management/screens/task_list_page.dart';
@@ -75,7 +73,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         }
       });
     }
-
     return Scaffold(
       appBar: DateHeaderWidget(
         update: updateDate,

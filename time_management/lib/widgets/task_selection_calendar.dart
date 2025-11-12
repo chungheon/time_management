@@ -321,8 +321,7 @@ class TaskSelectionCalendarWidget extends StatelessWidget {
                           ],
                         ),
                   Text(
-                    DateTimeConstants
-                        .days[DateTimeHelpers.getDayValue(diffDate)]
+                   DateTimeHelpers.getDayValueStr(diffDate)
                         .toLowerCase()
                         .substring(0, 3),
                     style: AppStyles.defaultFont.copyWith(

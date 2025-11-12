@@ -16,15 +16,13 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
   final ViewController _viewController = Get.find<ViewController>();
   final GoalsController _goalsController = Get.find<GoalsController>();
   final Function()? update;
-  final RxInt addDate = RxInt(0);
   @override
   Size get preferredSize => const Size.fromHeight(80.0);
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: (){
+      onTap: () {
         update?.call();
-        addDate.value += 1;
       },
       child: GetBuilder(
         init: _viewController,
@@ -45,9 +43,9 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Obx(
-                        ()=> Text(
+                          () => Text(
                             DateFormat('dd/MM/yy')
-                                .format(_viewController.currDate.value!.add( Duration(days: addDate.value))),
+                                .format(_viewController.currDate.value!),
                             style: AppStyles.dateHeader(context),
                           ),
                         ),
@@ -55,9 +53,9 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
                           width: 2.0,
                         ),
                         Obx(
-                          ()=> Text(
-                            DateTimeConstants.days[DateTimeHelpers.getDayValue(
-                                _viewController.currDate.value!.add( Duration(days: addDate.value)))],
+                          () => Text(
+                            DateTimeHelpers.getDayValueStr(
+                                _viewController.currDate.value!),
                             style: AppStyles.subDateHeader(context),
                           ),
                         ),
@@ -79,9 +77,10 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
                         int ongoing = dayPlanList
                             .where((e) => e.task?.status == TaskStatus.ongoing)
                             .length;
-      
+
                         int completed = dayPlanList
-                            .where((e) => e.task?.status == TaskStatus.completed)
+                            .where(
+                                (e) => e.task?.status == TaskStatus.completed)
                             .length;
                         return Row(
                           children: [
@@ -102,7 +101,8 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
                             Container(
                               height: 3.0,
                               width: 3.0,
-                              margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 5.0),
                               decoration: BoxDecoration(
                                 color: StateContainer.of(context)
                                     ?.currTheme
@@ -125,7 +125,8 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
                             Container(
                               height: 3.0,
                               width: 3.0,
-                              margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 5.0),
                               decoration: BoxDecoration(
                                 color: StateContainer.of(context)
                                     ?.currTheme
