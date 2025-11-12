@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_interpolation_to_compose_strings
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -127,23 +129,24 @@ class FocusPage extends StatelessWidget {
   }
 
   void onTapViewStatus(BuildContext context) {
+    String title = DateTimeConstants
+            .days[(DateTimeHelpers.getDayValue(DateTime.now().dateOnly()))] +
+        " " +
+        DateTimeHelpers.getFormattedDate(DateTime.now().dateOnly());
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return Dialog(
             child: Container(
               height: 300,
-              padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
               alignment: Alignment.center,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    DateTimeConstants.days[(DateTimeHelpers.getDayValue(
-                            DateTime.now().dateOnly()))] +
-                        " " +
-                        DateTimeHelpers.getFormattedDate(
-                            DateTime.now().dateOnly()),
+                    title,
                     style: AppStyles.defaultFont
                         .copyWith(fontSize: AppFontSizes.header2),
                   ),
@@ -185,6 +188,7 @@ class FocusPage extends StatelessWidget {
     hasFetched.value = true;
     bool hasArgs = ModalRoute.of(context)!.settings.arguments != null;
     if (!hasArgs) {
+      _sessionController.checkPrefs();
       return;
     }
     Map<String, String> routeArgs =
@@ -230,8 +234,8 @@ class FocusPage extends StatelessWidget {
                 msg: "Exit Focus Mode?",
                 onConfirm: () async {
                   _sessionController.timer.value.cancel();
-                  _sessionController.removeNotification(
-                      _sessionController.currentNotifId.value);
+                  // _sessionController.removeNotification(
+                  //     _sessionController.currentNotifId.value);
                 }),
           );
         }
@@ -244,15 +248,15 @@ class FocusPage extends StatelessWidget {
               msg: "Exit Focus Mode?",
               onConfirm: () async {
                 _sessionController.timer.value.cancel();
-                _sessionController.removeNotification(
-                    _sessionController.currentNotifId.value);
+                // _sessionController.removeNotification(
+                //     _sessionController.currentNotifId.value);
               }),
           additionalAction: [
             InkWell(
               child: const Material(
                 child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: 10.0),
-                    child: Icon(Icons.copy)),
+                    child: Icon(Icons.list_alt_rounded)),
               ),
               onTap: () => onTapViewStatus(context),
             ),
@@ -278,7 +282,7 @@ class FocusPage extends StatelessWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   ..._generateTimer(
-                                      controller.sessionSecs.value),
+                                      controller.sessionSecs.value % 9999),
                                 ],
                               ),
                               Positioned(
@@ -375,16 +379,13 @@ class FocusPage extends StatelessWidget {
                                   ?.currTheme
                                   .darkButton),
                           child: Center(
-                            child: GetBuilder(
-                              init: controller,
-                              builder: (controller) => Text(
-                                controller.isSession.value
-                                    ? controller.timer.value.isActive
-                                        ? "Stop"
-                                        : "Start"
-                                    : "Start",
-                                style: AppStyles.actionButtonText(context),
-                              ),
+                            child: Text(
+                              controller.isSession.value
+                                  ? controller.timer.value.isActive
+                                      ? "Stop"
+                                      : "Start"
+                                  : "Start",
+                              style: AppStyles.actionButtonText(context),
                             ),
                           ),
                         ),
@@ -459,16 +460,13 @@ class FocusPage extends StatelessWidget {
                                   ?.currTheme
                                   .darkButton),
                           child: Center(
-                            child: GetBuilder(
-                              init: _sessionController,
-                              builder: (controller) => Text(
-                                _sessionController.isSession.value
-                                    ? "Start Break"
-                                    : _sessionController.timer.value.isActive
-                                        ? "Stop Break"
-                                        : "Start Break",
-                                style: AppStyles.actionButtonText(context),
-                              ),
+                            child: Text(
+                              controller.isSession.value
+                                  ? "Start Break"
+                                  : controller.timer.value.isActive
+                                      ? "Stop Break"
+                                      : "Start Break",
+                              style: AppStyles.actionButtonText(context),
                             ),
                           ),
                         ),
@@ -479,17 +477,26 @@ class FocusPage extends StatelessWidget {
                     height: 30.0,
                   ),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: controller.items.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 20.0,
-                            ),
-                            child: _dayPlanListItem(
-                                controller.items[index], context));
-                      },
-                    ),
+                    child: GetBuilder(
+                        init: _goalsController,
+                        builder: (controller) {
+                          int now =
+                              DateTime.now().dateOnly().millisecondsSinceEpoch;
+                          List<DayPlanItem> dayItems =
+                              _goalsController.dayPlansList[now] ?? [];
+                          dayItems.sort(DayPlanItem.prioritySort);
+                          return ListView.builder(
+                            itemCount: dayItems.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20.0,
+                                  ),
+                                  child: _dayPlanListItem(
+                                      dayItems[index], context));
+                            },
+                          );
+                        }),
                   )
                 ],
               );

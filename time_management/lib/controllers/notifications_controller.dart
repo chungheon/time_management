@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
@@ -29,9 +30,9 @@ class NotificationsController extends GetxController {
           iOS: initializationSettingsDarwin,
           macOS: initializationSettingsDarwin,
           linux: initializationSettingsLinux);
+  static const int insistentFlag = 4;
   final StreamController<NotificationResponse> selectNotificationStream =
       StreamController<NotificationResponse>.broadcast();
-  int idCounter = 0;
 
   Future<void> init(RoutineController routineController,
       GoalsController goalsController) async {
@@ -120,34 +121,34 @@ class NotificationsController extends GetxController {
     await flutterLocalNotificationsPlugin.cancel(uid);
   }
 
-  void _onRecievedNotifications(NotificationResponse response){
+  void _onRecievedNotifications(NotificationResponse response) {
     List<String> payloadSplit = (response.payload ?? "").split("|");
-        Map<String, String> args = Map.fromEntries(
-            payloadSplit.map<MapEntry<String, String>>((String e) {
-          List<String> data = e.split(":");
-          if (data.length == 2) {
-            return MapEntry(data[0], data[1]);
-          } else {
-            return MapEntry(e, e);
-          }
-        }));
-        if (response.payload != null) {
-          if (args['route'] != null) {
-            Get.offAllNamed(
-              '/',
-            );
-            switch (args['route']) {
-              case 'focus':
-                Get.lazyPut(() => SessionController());
-                Get.to(() => FocusPage(), arguments: args);
-            }
-          } else {
-            Get.offAllNamed(
-              '/',
-              arguments: args,
-            );
-          }
+    Map<String, String> args =
+        Map.fromEntries(payloadSplit.map<MapEntry<String, String>>((String e) {
+      List<String> data = e.split(":");
+      if (data.length == 2) {
+        return MapEntry(data[0], data[1]);
+      } else {
+        return MapEntry(e, e);
+      }
+    }));
+    if (response.payload != null) {
+      if (args['route'] != null) {
+        Get.offAllNamed(
+          '/',
+        );
+        switch (args['route']) {
+          case 'focus':
+            Get.lazyPut(() => SessionController());
+            Get.to(() => FocusPage(), arguments: args);
         }
+      } else {
+        Get.offAllNamed(
+          '/',
+          arguments: args,
+        );
+      }
+    }
   }
 
   void _configureRecievedNotifications() {
@@ -196,6 +197,8 @@ class NotificationsController extends GetxController {
             channelDescription: 'Alarms that are scheduled to show once',
             importance: Importance.max,
             priority: Priority.high,
+            ticker: 'ticker',
+            additionalFlags: Int32List.fromList(<int>[insistentFlag]),
             onlyAlertOnce: true,
             when: time.millisecondsSinceEpoch);
     DateTime date = time;
@@ -261,11 +264,12 @@ class NotificationsController extends GetxController {
         routine.desc,
         scheduled,
         NotificationDetails(
-          android: AndroidNotificationDetails(
-            'Routine',
-            channelData,
-            channelDescription: channelData,
-          ),
+          android: AndroidNotificationDetails('Routine', channelData,
+              channelDescription: channelData,
+              importance: Importance.high,
+              priority: Priority.high,
+              ticker: 'ticker',
+              additionalFlags: Int32List.fromList(<int>[insistentFlag])),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,

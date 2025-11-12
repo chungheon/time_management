@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:time_management/constants/sql_constants.dart';
-import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
+import 'package:time_management/controllers/shared_preferences_controller.dart';
 import 'package:time_management/controllers/sql_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/helpers/notification_text_helper.dart';
@@ -20,7 +20,7 @@ class SessionController extends GetxController {
   final Rxn<SessionCounter> currCounter = Rxn<SessionCounter>();
   final SQLController _sqlController = Get.find();
   final NotificationsController _notificationsController = Get.find();
-  final GoalsController _goalsController = Get.find();
+  final SharedPreferencesController _sharedPreferencesController = Get.find();
   final RxInt totalBreaks = RxInt(0);
   final RxInt sessionSecs = RxInt(1800);
   final RxInt initialSecs = RxInt(1800);
@@ -31,20 +31,18 @@ class SessionController extends GetxController {
   final PageController breakMinController = PageController();
   final RxBool isSession = true.obs;
   final RxBool isPaused = false.obs;
-  final int incrementMax = 120;
+  final int incrementMax = 99;
   final int incrementMin = 1;
   final int breakMin = 1;
   final int breakMax = 30;
   final RxInt timerEndTime = RxInt(0);
   final RxInt currentNotifId = RxInt(0);
   final RxList<DayPlanItem> items = RxList();
+  final Map<String, String> cache = Map<String, String>();
 
   @override
   void onInit() {
     super.onInit();
-    initialSecs.value = inputTimeMin.value * 60;
-    sessionSecs.value = initialSecs.value;
-    timer.value.cancel();
     fetchSession().then((session) async {
       currentSess.value = session;
       inputBreakMin.value = session.breakInterval ?? 5;
@@ -68,12 +66,89 @@ class SessionController extends GetxController {
     }).onError((e, _) {
       //Ignore Error
     });
-    int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
-    items.value = _goalsController.dayPlansList[now] ?? [];
+  }
+
+  Future<void> checkPrefs() async {
+    int now = DateTime.now().millisecondsSinceEpoch;
+    for (String text in SharedPreferencesController.allowedList) {
+      cache[text] = (await _sharedPreferencesController.getValue(text)) ?? '';
+    }
+    List<String> payloadSplit =
+        (cache[SharedPreferencesController.allowedList.elementAt(2)] ?? '')
+            .split('|');
+    Map<String, String> args =
+        Map.fromEntries(payloadSplit.map<MapEntry<String, String>>((String e) {
+      List<String> data = e.split(":");
+      if (data.length == 2) {
+        return MapEntry(data[0], data[1]);
+      } else {
+        return MapEntry(e, e);
+      }
+    }));
+    final bool isSession =
+        args['session'] != null ? true : (args['break'] == null);
+    this.isSession.value = isSession;
+    if (isSession) {
+      initialSecs.value = (int.tryParse(args['session']!) ??
+              currCounter.value?.sessionInterval ??
+              30) *
+          60;
+      this.currCounter.value =
+          await getSessionCounter((initialSecs.value / 60).floor());
+      timeMinController.jumpToPage((initialSecs / 60).floor() - 1);
+    } else {
+      initialSecs.value = (int.tryParse(args['break']!) ??
+              currentSess.value.breakInterval ??
+              5) *
+          60;
+      print(initialSecs / 60);
+      breakMinController.jumpToPage((initialSecs / 60).floor() - 1);
+    }
+    if (cache[SharedPreferencesController.allowedList.elementAt(1)] == 'true') {
+      int timeEnd = int.tryParse(
+              cache[SharedPreferencesController.allowedList.elementAt(0)]!) ??
+          0;
+      currentNotifId.value = int.tryParse(
+              cache[SharedPreferencesController.allowedList.elementAt(3)]!) ??
+          0;
+      int timeLeft = timeEnd - now;
+
+      timerEndTime.value = timeEnd;
+      if (timeEnd > now) {
+        this.sessionSecs.value = (timeLeft / 1000).floor();
+        timer.value.cancel();
+        timer.value = createTimerFunc();
+      } else {
+        this.sessionSecs.value = 0;
+        timer.value.cancel();
+        timer.value = createTimerFunc();
+        cache[SharedPreferencesController.allowedList.elementAt(1)] = 'false';
+        updateSharedPref(cache);
+      }
+    } else if (cache[SharedPreferencesController.allowedList.elementAt(1)] ==
+        'paused') {
+      int timeLeft = int.tryParse(
+              cache[SharedPreferencesController.allowedList.elementAt(0)]!) ??
+          0;
+      print(isSession);
+      print(timeLeft);
+      this.sessionSecs.value = timeLeft;
+      this.timerEndTime.value = now + (timeLeft * 1000);
+      this.isPaused.value = true;
+      timer.value.cancel();
+      timer.value = createTimerFunc();
+    }else{
+      this.sessionSecs.value = initialSecs.value;
+      
+    }
+    update();
   }
 
   Timer createTimerFunc() {
     return Timer.periodic(const Duration(seconds: 1), (_) {
+      if (isPaused.value) {
+        return;
+      }
       sessionSecs.value -= 1;
       int now = DateTime.now().millisecondsSinceEpoch - 200;
       if (now >= timerEndTime.value || sessionSecs.value <= 0) {
@@ -108,9 +183,22 @@ class SessionController extends GetxController {
           isSession.value ? inputTimeMin.value : inputBreakMin.value;
       initialSecs.value = sessionTime * 60;
       sessionSecs.value = initialSecs.value;
+      isPaused.value = false;
+      cache[SharedPreferencesController.allowedList.elementAt(1)] = 'false';
+      updateSharedPref(cache);
       timer.value.cancel();
       if (remove) removeNotification(currentNotifId.value);
       update();
+    }
+  }
+
+  Future<void> updateSharedPref(Map<String, String> prefs) async {
+    for (int i = 0; i < SharedPreferencesController.allowedList.length; i++) {
+      await _sharedPreferencesController.updateValue(
+          SharedPreferencesController.allowedList.elementAt(i),
+          prefs[SharedPreferencesController.allowedList.elementAt(i)]!);
+      print(await _sharedPreferencesController
+          .getValue(SharedPreferencesController.allowedList.elementAt(i)));
     }
   }
 
@@ -140,6 +228,13 @@ class SessionController extends GetxController {
     currentNotifId.value = await createNotification(
         title, body, timerEndTime.value,
         payload: payload);
+    cache[SharedPreferencesController.allowedList.elementAt(0)] =
+        timerEndTime.value.toString();
+    cache[SharedPreferencesController.allowedList.elementAt(1)] = 'true';
+    cache[SharedPreferencesController.allowedList.elementAt(2)] = payload;
+    cache[SharedPreferencesController.allowedList.elementAt(3)] =
+        currentNotifId.value.toString();
+    updateSharedPref(cache);
     if (isSession.value) {
       currCounter.value = await createSessionTimer(sessionTime);
     } else {
@@ -167,9 +262,9 @@ class SessionController extends GetxController {
     if (isSession) {
       currCounter.value = await getSessionCounter(interval);
       if (currCounter.value!.sessionCount == 0) {
+        currCounter.value!.sessionCount = updateTotal;
         _sqlController.insertObject(currCounter.value!);
-      }
-      if ((currCounter.value!.sessionCount ?? 0) < updateTotal) {
+      } else if ((currCounter.value!.sessionCount ?? 0) < updateTotal) {
         currCounter.value!.sessionCount = updateTotal;
         _sqlController.updateObject(currCounter.value!);
       }
@@ -244,13 +339,18 @@ class SessionController extends GetxController {
 
   Future<void> pauseTimer() async {
     isPaused.value = true;
-    timer.value.cancel();
     removeNotification(currentNotifId.value);
+    cache[SharedPreferencesController.allowedList.elementAt(1)] = 'paused';
+    cache[SharedPreferencesController.allowedList.elementAt(0)] =
+        sessionSecs.value.toString();
+    updateSharedPref(cache);
+    currentNotifId.value.toString();
     update();
   }
 
   Future<void> resumeTimer() async {
     int now = DateTime.now().millisecondsSinceEpoch;
+    timerEndTime.value = now + (sessionSecs.value * 60 * 1000);
     String title = isSession.value
         ? NotificationTextHelper.sessionEndTitle(
             (initialSecs.value / 60).floor())
@@ -260,7 +360,6 @@ class SessionController extends GetxController {
         ? NotificationTextHelper.sessionEndBody(
             (currCounter.value?.sessionCount ?? 0) + 1)
         : NotificationTextHelper.breakEndBody();
-    timerEndTime.value = now + (sessionSecs.value * 1000);
     String payload = isSession.value
         ? NotificationTextHelper.sessionEndPayload(
             currentSess.value.uid!.toString(),
@@ -273,10 +372,14 @@ class SessionController extends GetxController {
     currentNotifId.value = await createNotification(
         title, body, timerEndTime.value,
         payload: payload);
+    cache[SharedPreferencesController.allowedList.elementAt(1)] = 'paused';
+    cache[SharedPreferencesController.allowedList.elementAt(0)] =
+        timerEndTime.value.toString();
+    cache[SharedPreferencesController.allowedList.elementAt(3)] =
+        currentNotifId.value.toString();
+    updateSharedPref(cache);
     initialSecs.value =
-        isSession.value ? inputTimeMin.value : inputBreakMin.value;
-    sessionSecs.value = initialSecs.value;
-    timer.value = createTimerFunc();
+        isSession.value ? inputTimeMin.value : inputBreakMin.value * 60 * 1000;
     isPaused.value = false;
   }
 

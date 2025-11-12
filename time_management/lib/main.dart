@@ -8,6 +8,7 @@ import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
 import 'package:time_management/controllers/session_controller.dart';
+import 'package:time_management/controllers/shared_preferences_controller.dart';
 import 'package:time_management/controllers/sql_controller.dart';
 import 'package:time_management/controllers/view_controller.dart';
 import 'package:time_management/screens/home_page.dart';
@@ -40,9 +41,12 @@ Future<void> initNotifications() async {
   NotificationsController notificationsController = NotificationsController();
   RoutineController routineController = RoutineController();
   GoalsController goalsController = GoalsController();
+  SharedPreferencesController sharedPreferencesController =
+      SharedPreferencesController();
   Get.put(routineController, permanent: true);
   Get.put(notificationsController, permanent: true);
   Get.put(goalsController, permanent: true);
+  Get.put(sharedPreferencesController, permanent: true);
   await routineController.init();
   notificationsController.init(routineController, goalsController);
 }
