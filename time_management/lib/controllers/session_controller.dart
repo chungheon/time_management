@@ -69,6 +69,18 @@ class SessionController extends GetxController {
     });
   }
 
+  Future<void> showStats() async {
+    var values = cache.values.toList();
+    showDialog(
+      context: Get.context!,
+      builder: (c) => Dialog(
+        child: Column(
+          children: values.map<Widget>((v) => Text(v)).toList(),
+        ),
+      ),
+    );
+  }
+
   Future<void> checkPrefs() async {
     int now = DateTime.now().millisecondsSinceEpoch;
     for (String text in SharedPreferencesController.allowedList) {
@@ -128,9 +140,7 @@ class SessionController extends GetxController {
       int timeLeft = int.tryParse(
               cache[SharedPreferencesController.allowedList.elementAt(0)]!) ??
           0;
-      print(isSession);
-      print(timeLeft);
-      this.sessionSecs.value = timeLeft;
+      this.sessionSecs.value = timeLeft % (60 * 100);
       this.timerEndTime.value = now + (timeLeft * 1000);
       this.isPaused.value = true;
       timer.value.cancel();
@@ -374,7 +384,7 @@ class SessionController extends GetxController {
     currentNotifId.value = await createNotification(
         title, body, timerEndTime.value,
         payload: payload);
-    cache[SharedPreferencesController.allowedList.elementAt(1)] = 'paused';
+    cache[SharedPreferencesController.allowedList.elementAt(1)] = 'true';
     cache[SharedPreferencesController.allowedList.elementAt(0)] =
         timerEndTime.value.toString();
     cache[SharedPreferencesController.allowedList.elementAt(3)] =

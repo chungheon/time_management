@@ -71,10 +71,12 @@ class FocusPage extends StatelessWidget {
   }
 
   void onTapTimer(SessionController controller) async {
-    if (controller.isPaused.value) {
-      controller.resumeTimer();
-    } else {
-      controller.pauseTimer();
+    if (controller.timer.value.isActive) {
+      if (controller.isPaused.value) {
+        controller.resumeTimer();
+      } else {
+        controller.pauseTimer();
+      }
     }
   }
 
