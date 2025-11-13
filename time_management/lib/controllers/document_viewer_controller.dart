@@ -36,8 +36,7 @@ class DocumentViewerController extends GetxController {
         return openVideoUrl(doc, context);
       //String
       case 2:
-        openStringDialog(doc, context);
-        break;
+        return openStringDialog(doc, context);
       //Doc
       case 3:
         return openDocumentDoc(doc.path ?? "");

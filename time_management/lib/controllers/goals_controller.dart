@@ -87,7 +87,7 @@ class GoalsController extends GetxController {
   Future<Task?> fetchTaskById(int taskId) async {
     List<Map<String, Object?>>? tasks =
         await _sqlController.rawQuery(SQLHelper.selectTaskById(taskId));
-    return tasks?.map<Task>((e) {
+    Task? task = tasks?.map<Task>((e) {
       Task task = Task.fromSQFLITEMap(e);
       for (var element in goalList) {
         if (element.uid == task.goalTaskId) {
@@ -98,6 +98,12 @@ class GoalsController extends GetxController {
 
       return task;
     }).firstOrNull;
+
+    if (task == null && task!.goal?.documents != null) {
+      return task;
+    }
+    setDocumentsToTask(task, task.goal!.documents);
+    return task;
   }
 
   Future<Document?> fetchDocById(int docId) async {

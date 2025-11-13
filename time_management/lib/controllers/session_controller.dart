@@ -124,10 +124,9 @@ class SessionController extends GetxController {
               cache[SharedPreferencesController.allowedList.elementAt(3)]!) ??
           0;
       int timeLeft = timeEnd - now;
-
       timerEndTime.value = timeEnd;
       if (timeEnd > now) {
-        this.sessionSecs.value = (timeLeft / 1000).floor();
+        this.sessionSecs.value = (timeLeft / 1000).floor() % (60 * 100);
         timer.value.cancel();
         timer.value = createTimerFunc();
       } else {
@@ -146,7 +145,7 @@ class SessionController extends GetxController {
       timer.value.cancel();
       timer.value = createTimerFunc();
     } else {
-      this.sessionSecs.value = initialSecs.value;
+      this.sessionSecs.value = initialSecs.value % (60 * 100);
     }
     update();
   }
@@ -362,7 +361,7 @@ class SessionController extends GetxController {
 
   Future<void> resumeTimer() async {
     int now = DateTime.now().millisecondsSinceEpoch;
-    timerEndTime.value = now + (sessionSecs.value * 60 * 1000);
+    timerEndTime.value = now + (sessionSecs.value * 1000);
     String title = isSession.value
         ? NotificationTextHelper.sessionEndTitle(
             (initialSecs.value / 60).floor())

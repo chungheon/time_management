@@ -118,9 +118,11 @@ class AddDocumentPage extends StatelessWidget {
 
   Future<void> onTapLinkDocuments() async {
     Get.off(() => LoadingPageWidget(
-          asyncFunc: createDocuments,
-          onComplete: (docs) {
-            onComplete(docs as List<Document>);
+          asyncFunc: () async {
+            var docs = await createDocuments();
+            await onComplete(docs);
+          },
+          onComplete: (docs) async {
             Get.until((route) => returnRoute != null
                 ? route.settings.name == returnRoute!
                 : route.isFirst);

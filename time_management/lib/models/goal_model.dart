@@ -80,7 +80,8 @@ class Goal with SQFLiteObject {
   @override
   String toString() {
     return 'Goal{${SQLConstants.colGoalId}: $uid, ${SQLConstants.colGoalName}: $name,' +
-        ' ${SQLConstants.colGoalPurpose}: $purpose, tags:$tags, ${SQLConstants.colGoalDueDate}: ${DateTimeHelpers.getDateStr(dueDate)}}';
+        ' ${SQLConstants.colGoalPurpose}: $purpose, tags:$tags, '+ 
+        '${SQLConstants.colGoalDueDate}: ${DateTimeHelpers.getDateStr(dueDate)}},' + 'docs: $documents';
   }
 
   @override
