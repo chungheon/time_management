@@ -58,15 +58,14 @@ class NotificationsController extends GetxController {
         await getActiveNotificationsId(),
         title,
         body,
-        const NotificationDetails(
-            android: AndroidNotificationDetails(
-          "Pomodoro",
-          "Pomodoro",
-          channelDescription: 'For Pomodoro Tracking',
-          importance: Importance.max,
-          priority: Priority.max,
-          onlyAlertOnce: true,
-        )));
+        NotificationDetails(
+            android: AndroidNotificationDetails("Pomodoro", "Pomodoro",
+                channelDescription: 'For Pomodoro Tracking',
+                importance: Importance.max,
+                priority: Priority.max,
+                onlyAlertOnce: false,
+                additionalFlags: Int32List.fromList(<int>[insistentFlag])
+                )));
   }
 
   Future<void> setupRoutineNotifications(
@@ -196,9 +195,8 @@ class NotificationsController extends GetxController {
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails('Scheduled Alarm', 'Alarm',
             channelDescription: 'Alarms that are scheduled to show once',
-            importance: Importance.max,
+            importance: Importance.high,
             priority: Priority.high,
-            ticker: 'ticker',
             additionalFlags: Int32List.fromList(<int>[insistentFlag]),
             onlyAlertOnce: true,
             when: time.millisecondsSinceEpoch);
@@ -265,12 +263,13 @@ class NotificationsController extends GetxController {
         routine.desc,
         scheduled,
         NotificationDetails(
-          android: AndroidNotificationDetails('Routine', channelData,
-              channelDescription: channelData,
-              importance: Importance.high,
-              priority: Priority.high,
-              ticker: 'ticker',
-              additionalFlags: Int32List.fromList(<int>[insistentFlag])),
+          android: AndroidNotificationDetails(
+            'Routine',
+            channelData,
+            channelDescription: channelData,
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: payload,

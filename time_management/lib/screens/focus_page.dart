@@ -184,24 +184,25 @@ class FocusPage extends StatelessWidget {
     ));
   }
 
-
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (pop, _) {
         if (!pop) {
-          showDialog(
-            context: context,
-            builder: (_) => DialogConstants.exitDialog(
-                returnRoute: returnRoute,
-                msg: "Exit Focus Mode?",
-                onConfirm: () async {
-                  _sessionController.timer.value.cancel();
-                  // _sessionController.removeNotification(
-                  //     _sessionController.currentNotifId.value);
-                }),
-          );
+          // showDialog(
+          //   context: context,
+          //   builder: (_) => DialogConstants.exitDialog(
+          //       returnRoute: returnRoute,
+          //       msg: "Exit Focus Mode?",
+          //       onConfirm: () async {
+          //         _sessionController.timer.value.cancel();
+          //         // _sessionController.removeNotification(
+          //         //     _sessionController.currentNotifId.value);
+          //       }),
+          // );
+          _sessionController.timer.value.cancel();
+          Get.back();
         }
       },
       child: Scaffold(
