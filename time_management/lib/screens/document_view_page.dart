@@ -35,9 +35,10 @@ class DocumentViewPage extends StatelessWidget {
     await _goalsController.updateTask(task.value!, task.value!.goal!);
     if (updatedGoal != null && currGoal != null) {
       await _goalsController.updateGoal(currGoal);
-      task.value = await _goalsController.fetchTaskById(task.value!.uid ?? -1);
-      _goalsController.update();
     }
+    task.update((task) async {
+      task = await _goalsController.fetchTaskById(task!.uid ?? -1);
+    });
   }
 
   @override

@@ -121,6 +121,7 @@ class AddDocumentPage extends StatelessWidget {
           asyncFunc: () async {
             var docs = await createDocuments();
             await onComplete(docs);
+            return docs;
           },
           onComplete: (docs) async {
             Get.until((route) => returnRoute != null
