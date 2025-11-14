@@ -61,7 +61,7 @@ class _OverviewPageState extends State<OverviewPage>
         children: [
           TabBar(
               controller: _tabController,
-              tabs:const [Tab(text: 'Checklist'), Tab(text: 'Routines')]),
+              tabs: const [Tab(text: 'Checklist'), Tab(text: 'Routines')]),
           Expanded(
             child: TabBarView(controller: _tabController, children: [
               _checklistView(context),
@@ -245,7 +245,8 @@ class _OverviewPageState extends State<OverviewPage>
             }
             return false;
           });
-          String routineComplete = "${controller.checkList.length}/${controller.routineList.length}";
+          String routineComplete =
+              "${controller.checkList.length}/${controller.routineList.length}";
           return Column(
             children: [
               Text(routineComplete),
@@ -391,11 +392,10 @@ class _OverviewPageState extends State<OverviewPage>
     if (routines.isEmpty) {
       return Container();
     }
-
     return Column(
       children: [
         Text(title),
-        for(int i = 0; i < routines.length; i++)
+        for (int i = 0; i < routines.length; i++)
           _routineItem(routines.elementAt(i))
       ],
     );
@@ -420,13 +420,12 @@ class _OverviewPageState extends State<OverviewPage>
               return _routineItem(routine);
             }).toList(),
           */
-          return ListView(
-              children: [
-                _routineGroup(daily, "Daily"),
-                _routineGroup(weekly, "Weekly"),
-                _routineGroup(monthly, "Monthly"),
-                _routineGroup(yearly, "Yearly"),
-              ]);
+          return ListView(children: [
+            _routineGroup(daily, "Daily"),
+            _routineGroup(weekly, "Weekly"),
+            _routineGroup(monthly, "Monthly"),
+            _routineGroup(yearly, "Yearly"),
+          ]);
         });
   }
 }

@@ -26,6 +26,7 @@ class RoutineController extends GetxController {
 
   Future<void> refreshList() async {
     routineList.value = await fetchRoutines();
+    routineList.sort(Routine.sortByTime);
     checkList.value = await fetchChecklist();
     update();
   }

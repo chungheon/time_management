@@ -152,6 +152,8 @@ class _DayPlanReviewPageState extends State<DayPlanReviewPage>
     var currentRoute = Get.currentRoute;
     Get.to(() => AddTaskPage(
           returnRoute: currentRoute,
+          startDate: DateTimeHelpers.getDateStr(
+              widget.planDate.millisecondsSinceEpoch),
           onCreateComplete: (taskUid) async {
             await Get.to(
               () => LoadingPageWidget(

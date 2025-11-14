@@ -33,6 +33,7 @@ class NotificationsController extends GetxController {
   static const int insistentFlag = 4;
   final StreamController<NotificationResponse> selectNotificationStream =
       StreamController<NotificationResponse>.broadcast();
+  final Int64List vibrationList = Int64List(4);
 
   Future<void> init(RoutineController routineController,
       GoalsController goalsController) async {
@@ -64,8 +65,7 @@ class NotificationsController extends GetxController {
                 importance: Importance.max,
                 priority: Priority.max,
                 onlyAlertOnce: false,
-                additionalFlags: Int32List.fromList(<int>[insistentFlag])
-                )));
+                additionalFlags: Int32List.fromList(<int>[insistentFlag]))));
   }
 
   Future<void> setupRoutineNotifications(
@@ -192,13 +192,19 @@ class NotificationsController extends GetxController {
 
   Future<int> scheduleAlarm(String title, String body, DateTime time,
       {String? payload}) async {
+        vibrationList[0] = 100;
+        vibrationList[1] = 200;
+        vibrationList[2] = 300;
+        vibrationList[3] = 400;
+        
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails('Scheduled Alarm', 'Alarm',
             channelDescription: 'Alarms that are scheduled to show once',
-            importance: Importance.high,
-            priority: Priority.high,
-            additionalFlags: Int32List.fromList(<int>[insistentFlag]),
-            onlyAlertOnce: true,
+            importance: Importance.max,
+            priority: Priority.max,
+            onlyAlertOnce: false,
+            channelBypassDnd: true,
+            vibrationPattern: vibrationList,
             when: time.millisecondsSinceEpoch);
     DateTime date = time;
     tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,

@@ -214,10 +214,8 @@ class TaskListPage extends StatelessWidget {
           if (!timer.value.isActive) {
             timer.value =
                 Timer.periodic(const Duration(milliseconds: 500), (timer) {
-              timerCountdown.value++;
-              if (timerCountdown.value >= 6) {
-                timerCountdown.value = 0;
-                this.timer.value.cancel();
+              if (timer.tick >= 6) {
+                timer.cancel();
                 int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
                 _goalsController.dayPlansList[now]
                     ?.sort(DayPlanItem.prioritySort);

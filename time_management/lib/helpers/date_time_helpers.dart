@@ -59,7 +59,7 @@ class DateTimeHelpers {
     }
   }
 
-  static getDateStr(int? date, {String? dateFormat}) {
+  static String getDateStr(int? date, {String? dateFormat}) {
     if (date == null) {
       return 'Error';
     } else {

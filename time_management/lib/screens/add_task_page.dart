@@ -22,14 +22,25 @@ import 'package:time_management/widgets/video_document_widget.dart';
 
 class AddTaskPage extends StatelessWidget {
   AddTaskPage(
-      {super.key, this.returnRoute, Goal? goal, this.onCreateComplete}) {
+      {super.key,
+      this.returnRoute,
+      Goal? goal,
+      this.onCreateComplete,
+      String? startDate}) {
     if (goal != null) {
       selectedGoal.value = goal;
     } else {
       selectedGoal.value = _goalsController.goalList.first;
     }
-    _startDateInput.value = DateTimeHelpers.getDateStr(
-        DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch);
+
+    if (startDate == null) {
+      _startDateInput.value =
+          DateTimeHelpers.getDateStr(DateTime.now().millisecondsSinceEpoch);
+      _dateTextController.text = _startDateInput.value;
+    } else {
+      _startDateInput.value = startDate;
+      _dateTextController.text = _startDateInput.value;
+    }
   }
   final GoalsController _goalsController = Get.find<GoalsController>();
   final String? returnRoute;

@@ -29,6 +29,7 @@ class FocusPage extends StatelessWidget {
   final SessionController _sessionController = Get.find();
   final GoalViewController _goalViewController = Get.find();
   final String? returnRoute;
+  final Rx<Timer> _updateTimer = Rx<Timer>(Timer(Duration.zero, () {}));
 
   static final List<Image> _timerImages = [
     Image.asset("assets/png/0.png"),
@@ -451,7 +452,6 @@ class FocusPage extends StatelessWidget {
                               DateTime.now().dateOnly().millisecondsSinceEpoch;
                           List<DayPlanItem> dayItems =
                               _goalsController.dayPlansList[now] ?? [];
-                          dayItems.sort(DayPlanItem.prioritySort);
                           return ListView.builder(
                             itemCount: dayItems.length,
                             itemBuilder: (context, index) {
@@ -493,9 +493,35 @@ class FocusPage extends StatelessWidget {
               task.status = taskStatus;
             }
           } finally {
-            _goalsController.update();
             _goalViewController.isUpdating.value = false;
+            _goalsController.update();
           }
+        }
+        if (!_updateTimer.value.isActive) {
+          _updateTimer.value =
+              Timer.periodic(const Duration(milliseconds: 600), (timer) {
+            if (timer.tick > 3) {
+              _goalsController.update();
+              timer.cancel();
+              int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
+              _goalsController.dayPlansList[now]
+                  ?.sort(DayPlanItem.prioritySort);
+              _goalsController.update();
+            }
+          });
+        }else{
+          _updateTimer.value.cancel();
+          _updateTimer.value =
+              Timer.periodic(const Duration(milliseconds: 600), (timer) {
+            if (timer.tick > 3) {
+              _goalsController.update();
+              timer.cancel();
+              int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
+              _goalsController.dayPlansList[now]
+                  ?.sort(DayPlanItem.prioritySort);
+              _goalsController.update();
+            }
+          });
         }
       },
       child: Container(

@@ -1,4 +1,5 @@
 import 'package:time_management/constants/sql_constants.dart';
+import 'package:time_management/helpers/date_time_helpers.dart';
 
 //Seq - sequence each value represents a different frequency of the routine
 // 0 - every day
@@ -41,6 +42,17 @@ class Routine with SQFLiteObject {
       endDate: rEndDate,
     );
   }
+
+  static int sortByTime(Routine a, Routine b) {
+        DateTime dateA = DateTime.fromMillisecondsSinceEpoch(a.endDate ?? 0);
+        DateTime dateB = DateTime.fromMillisecondsSinceEpoch(b.endDate ?? 0);
+        return (dateA.millisecondsSinceEpoch -
+                    dateA.dateOnly().millisecondsSinceEpoch) >=
+                (dateB.millisecondsSinceEpoch -
+                    dateB.dateOnly().millisecondsSinceEpoch)
+            ? 1
+            : -1;
+      }
 
   @override
   String objTable() {
