@@ -34,6 +34,7 @@ class NotificationsController extends GetxController {
   final StreamController<NotificationResponse> selectNotificationStream =
       StreamController<NotificationResponse>.broadcast();
   final Int64List vibrationList = Int64List(4);
+  final RxBool hasRouted = false.obs;
 
   Future<void> init(RoutineController routineController,
       GoalsController goalsController) async {
@@ -42,8 +43,9 @@ class NotificationsController extends GetxController {
     _configureRecievedNotifications();
     var details =
         await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
-    if (details?.didNotificationLaunchApp ?? false) {
+    if (!hasRouted.value && (details?.didNotificationLaunchApp ?? false)) {
       _onRecievedNotifications(details!.notificationResponse!);
+      hasRouted.value = true;
     }
   }
 

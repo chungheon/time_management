@@ -379,7 +379,11 @@ class SQLConstants {
   static const String ixSessionDate = 'ix_session_date';
 
   //List of all Manual session table columns
-  static const List<String> sessionCols = [colSessionDate, colSessionBreak];
+  static const List<String> sessionCols = [
+    colSessionDate,
+    colSessionBreak,
+    colSessionBreakInterval
+  ];
 
   /*
     Session Counter Table (Look Up Table)

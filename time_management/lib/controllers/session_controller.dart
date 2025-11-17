@@ -127,12 +127,12 @@ class SessionController extends GetxController {
       timerEndTime.value = timeEnd;
       if (timeEnd > now) {
         this.sessionSecs.value = (timeLeft / 1000).floor() % (60 * 100);
-        timer.value.cancel();
-        timer.value = createTimerFunc();
+        this.timer.value.cancel();
+        this.timer.value = createTimerFunc();
       } else {
         this.sessionSecs.value = 0;
-        timer.value.cancel();
-        timer.value = createTimerFunc();
+        this.timer.value.cancel();
+        this.timer.value = createTimerFunc();
       }
     } else if (cache[SharedPreferencesController.allowedList.elementAt(1)] ==
         'paused') {
@@ -142,8 +142,8 @@ class SessionController extends GetxController {
       this.sessionSecs.value = timeLeft % (60 * 100);
       this.timerEndTime.value = now + (timeLeft * 1000);
       this.isPaused.value = true;
-      timer.value.cancel();
-      timer.value = createTimerFunc();
+      this.timer.value.cancel();
+      this.timer.value = createTimerFunc();
     } else {
       this.sessionSecs.value = initialSecs.value % (60 * 100);
     }
@@ -166,12 +166,16 @@ class SessionController extends GetxController {
           if (currCounter.value!.sessionCount == 1) {
             _sqlController.insertObject(currCounter.value!);
           } else {
-            _sqlController.updateObject(currCounter.value!);
+            _sqlController.updateObject(currCounter.value!,
+                where:
+                    "${SQLConstants.colSessionCounterSessId}=${currCounter.value?.sessId ?? -1}");
           }
         } else {
           currentSess.value.breakCount =
               (currentSess.value.breakCount ?? 0) + 1;
-          _sqlController.updateObject(currentSess.value);
+          _sqlController.updateObject(currentSess.value,
+              where:
+                  "${SQLConstants.colSessionId}=${currentSess.value.uid ?? -1}");
         }
       } else {
         int secondsLeft = ((timerEndTime.value - now) / 1000).floor();
@@ -203,8 +207,6 @@ class SessionController extends GetxController {
       await _sharedPreferencesController.updateValue(
           SharedPreferencesController.allowedList.elementAt(i),
           prefs[SharedPreferencesController.allowedList.elementAt(i)]!);
-      print(await _sharedPreferencesController
-          .getValue(SharedPreferencesController.allowedList.elementAt(i)));
     }
   }
 
@@ -225,11 +227,11 @@ class SessionController extends GetxController {
     String payload = isSession.value
         ? NotificationTextHelper.sessionEndPayload(
             currentSess.value.uid!.toString(),
-            sessionTime.toString(),
+            initialSecs.value.toString(),
             ((currCounter.value?.sessionCount ?? 0) + 1).toString())
         : NotificationTextHelper.breakEndPayload(
             currentSess.value.uid!.toString(),
-            sessionTime.toString(),
+            initialSecs.value.toString(),
             ((currentSess.value.breakCount ?? 0) + 1).toString());
     currentNotifId.value = await createNotification(
         title, body, timerEndTime.value,
@@ -245,7 +247,8 @@ class SessionController extends GetxController {
       currCounter.value = await createSessionTimer(sessionTime);
     } else {
       currentSess.value.breakInterval = sessionTime;
-      _sqlController.updateObject(currentSess.value);
+      _sqlController.updateObject(currentSess.value,
+          where: "${SQLConstants.colSessionId}=${currentSess.value.uid ?? -1}");
     }
     timer.value = createTimerFunc();
     update();
@@ -272,13 +275,16 @@ class SessionController extends GetxController {
         _sqlController.insertObject(currCounter.value!);
       } else if ((currCounter.value!.sessionCount ?? 0) < updateTotal) {
         currCounter.value!.sessionCount = updateTotal;
-        _sqlController.updateObject(currCounter.value!);
+        _sqlController.updateObject(currCounter.value!,
+            where:
+                "${SQLConstants.colSessionCounterSessId}=${currCounter.value?.sessId ?? -1}");
       }
     } else {
       if ((currentSess.value.breakCount ?? 0) < updateTotal) {
         currentSess.value.breakCount = updateTotal;
       }
-      _sqlController.updateObject(currentSess.value);
+      _sqlController.updateObject(currentSess.value,
+          where: "${SQLConstants.colSessionId}=${currentSess.value.uid ?? -1}");
     }
     for (String text in SharedPreferencesController.allowedList) {
       cache[text] = (await _sharedPreferencesController.getValue(text)) ?? '';
@@ -295,6 +301,7 @@ class SessionController extends GetxController {
               sqlCol: SQLConstants.colSessionCounterSessId,
             )) ??
             [];
+    print(sessionCounter);
     return sessionCounter.map<SessionCounter>((sessCounter) {
       return SessionCounter.fromSQFLITEMap(sessCounter);
     }).toList();
@@ -310,6 +317,8 @@ class SessionController extends GetxController {
 
     List<Map<String, Object?>> results =
         await _sqlController.rawQuery(query) ?? [];
+
+    print(results);
 
     if (results.isNotEmpty) {
       try {
@@ -400,7 +409,8 @@ class SessionController extends GetxController {
       return;
     }
     try {
-      _sqlController.updateObject(session);
+      _sqlController.updateObject(session,
+          where: "${SQLConstants.colSessionId}=${session.uid ?? -1}");
     } on Exception {
       rethrow;
     }
@@ -428,7 +438,8 @@ class SessionController extends GetxController {
   Future<void> addCountSession(SessionCounter counter) async {
     counter.sessionCount = (counter.sessionCount ?? 0) + 1;
     try {
-      _sqlController.updateObject(counter);
+      _sqlController.updateObject(counter,
+          where: '${SQLConstants.colSessionCounterSessId}=${counter.sessId}');
     } on Exception {
       rethrow;
     }
@@ -437,7 +448,8 @@ class SessionController extends GetxController {
   Future<void> addCountBreak(Session sess) async {
     sess.breakCount = (sess.breakCount ?? 0) + 1;
     try {
-      _sqlController.updateObject(sess);
+      _sqlController.updateObject(sess,
+          where: "${SQLConstants.colSessionId}=${sess.uid ?? -1}");
     } on Exception {
       rethrow;
     }

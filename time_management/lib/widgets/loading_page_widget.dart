@@ -10,26 +10,27 @@ class LoadingPageWidget extends StatelessWidget {
     this.onComplete,
     this.msg,
     this.onFail,
+    this.allowBack = false,
   });
 
   final Future<Object?> Function()? asyncFunc;
   final Function(Object?)? onComplete;
   final Function(Exception)? onFail;
   final String? msg;
+  final bool allowBack;
 
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((time) async {
       try {
-        asyncFunc?.call().then((value) async {
-          onComplete?.call(value);
-        });
+        var value = await asyncFunc?.call();
+        onComplete?.call(value);
       } on Exception catch (e) {
         onFail?.call(e) ?? Get.back();
       }
     });
     return PopScope(
-      canPop: false,
+      canPop: allowBack,
       child: Scaffold(
         backgroundColor: StateContainer.of(context)?.currTheme.background,
         body: Center(
