@@ -86,43 +86,26 @@ class SessionController extends GetxController {
     for (String text in SharedPreferencesController.allowedList) {
       cache[text] = (await _sharedPreferencesController.getValue(text)) ?? '';
     }
-    List<String> payloadSplit =
-        (cache[SharedPreferencesController.allowedList.elementAt(2)] ?? '')
-            .split('|');
-    Map<String, String> args =
-        Map.fromEntries(payloadSplit.map<MapEntry<String, String>>((String e) {
-      List<String> data = e.split(":");
-      if (data.length == 2) {
-        return MapEntry(data[0], data[1]);
-      } else {
-        return MapEntry(e, e);
-      }
-    }));
+    var args = await _sharedPreferencesController.getSessionPayload(cache);
     final bool isSession =
         args['session'] != null ? true : (args['break'] == null);
     this.isSession.value = isSession;
     if (isSession) {
       initialSecs.value = (int.tryParse(args['session']!) ??
-              currCounter.value?.sessionInterval ??
-              30) *
-          60;
+          (currCounter.value?.sessionInterval ?? 30) * 60);
       this.currCounter.value =
           await getSessionCounter((initialSecs.value / 60).floor());
       timeMinController.jumpToPage((initialSecs / 60).floor() - 1);
     } else {
       initialSecs.value = (int.tryParse(args['break']!) ??
-              currentSess.value.breakInterval ??
-              5) *
-          60;
+          ((currentSess.value.breakInterval ?? 5)) * 60);
       breakMinController.jumpToPage((initialSecs / 60).floor() - 1);
     }
-    if (cache[SharedPreferencesController.allowedList.elementAt(1)] == 'true') {
-      int timeEnd = int.tryParse(
-              cache[SharedPreferencesController.allowedList.elementAt(0)]!) ??
-          0;
-      currentNotifId.value = int.tryParse(
-              cache[SharedPreferencesController.allowedList.elementAt(3)]!) ??
-          0;
+    if (cache[SharedPreferencesController.SESSION_RUNNING] == 'true') {
+      int timeEnd =
+          int.tryParse(cache[SharedPreferencesController.SESSION_END]!) ?? 0;
+      currentNotifId.value =
+          int.tryParse(cache[SharedPreferencesController.SESSION_NOTIF]!) ?? 0;
       int timeLeft = timeEnd - now;
       timerEndTime.value = timeEnd;
       if (timeEnd > now) {
@@ -134,11 +117,9 @@ class SessionController extends GetxController {
         this.timer.value.cancel();
         this.timer.value = createTimerFunc();
       }
-    } else if (cache[SharedPreferencesController.allowedList.elementAt(1)] ==
-        'paused') {
-      int timeLeft = int.tryParse(
-              cache[SharedPreferencesController.allowedList.elementAt(0)]!) ??
-          0;
+    } else if (cache[SharedPreferencesController.SESSION_RUNNING] == 'paused') {
+      int timeLeft =
+          int.tryParse(cache[SharedPreferencesController.SESSION_END]!) ?? 0;
       this.sessionSecs.value = timeLeft % (60 * 100);
       this.timerEndTime.value = now + (timeLeft * 1000);
       this.isPaused.value = true;
@@ -301,7 +282,6 @@ class SessionController extends GetxController {
               sqlCol: SQLConstants.colSessionCounterSessId,
             )) ??
             [];
-    print(sessionCounter);
     return sessionCounter.map<SessionCounter>((sessCounter) {
       return SessionCounter.fromSQFLITEMap(sessCounter);
     }).toList();
@@ -317,8 +297,6 @@ class SessionController extends GetxController {
 
     List<Map<String, Object?>> results =
         await _sqlController.rawQuery(query) ?? [];
-
-    print(results);
 
     if (results.isNotEmpty) {
       try {

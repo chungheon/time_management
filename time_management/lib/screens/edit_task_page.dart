@@ -6,6 +6,7 @@ import 'package:time_management/constants/effect_constants.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/notifications_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
+import 'package:time_management/controllers/shared_preferences_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/document_model.dart';
 import 'package:time_management/models/goal_model.dart';
@@ -86,8 +87,8 @@ class EditTaskPage extends StatelessWidget {
             }
 
             await _goalsController.updateTask(task, selGoal);
-            _notificationsController.refreshNotifications(
-                _routineController, _goalsController);
+            _notificationsController.refreshNotifications(_routineController,
+                _goalsController, Get.find<SharedPreferencesController>());
             return result;
           },
           onComplete: (taskUid) async {

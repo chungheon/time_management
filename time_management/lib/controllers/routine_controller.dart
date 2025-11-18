@@ -9,7 +9,6 @@ import 'package:time_management/controllers/sql_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/helpers/sql_helper.dart';
 import 'package:time_management/models/checklist_item_model.dart';
-import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/routine_model.dart';
 
 class RoutineController extends GetxController {
@@ -73,7 +72,7 @@ class RoutineController extends GetxController {
           SQLConstants.routineTable,
           equal: {SQLConstants.colRoutineId: routine.uid}));
       routineList.removeWhere((element) => element.uid == routine.uid);
-      notificationsController.setupRoutineNotifications(
+      notificationsController.setupNotifications(
           routineList,
           goalsController.dayPlansList[
                   DateTime.now().dateOnly().millisecondsSinceEpoch] ??
@@ -116,7 +115,7 @@ class RoutineController extends GetxController {
     try {
       if (seq < 4) {
         await notificationsController.scheduleRoutine(routine,
-            payload: 'page:2');
+            payload: 'page:2|routineUid:$id');
         routineList.add(routine);
         update();
       } else if (seq >= 5) {

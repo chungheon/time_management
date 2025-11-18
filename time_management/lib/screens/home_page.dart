@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:time_management/controllers/document_viewer_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
+import 'package:time_management/controllers/notifications_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
 import 'package:time_management/controllers/view_controller.dart';
 import 'package:time_management/screens/goals_page.dart';
@@ -21,9 +22,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   TabController? _tabController;
   final ViewController _viewController = Get.find<ViewController>();
+  final NotificationsController _notificationsController = Get.find();
   final DocumentViewerController _documentViewerController =
       Get.find<DocumentViewerController>();
-  final Rxn<dynamic> args = Rxn<dynamic>();
 
   AppLifecycleListener? _appLifecycleListener;
   void updateDate() {
@@ -62,14 +63,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    args.value = ModalRoute.of(context)!.settings.arguments;
-    if (args.value != null) {
+    var args = _notificationsController.rPayload.value;
+    if (args != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_tabController != null &&
             (_tabController!.length - 1) >=
-                (int.tryParse(args.value['page']) ?? _tabController!.length)) {
+                (int.tryParse(args['page'].toString()) ??
+                    _tabController!.length)) {
           _tabController!.animateTo(
-              int.tryParse(args.value['page']) ?? _tabController!.length);
+              int.tryParse(args['page'].toString()) ?? _tabController!.length);
         }
       });
     }

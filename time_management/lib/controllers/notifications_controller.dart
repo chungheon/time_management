@@ -8,7 +8,9 @@ import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/routine_controller.dart';
 import 'package:time_management/controllers/session_controller.dart';
+import 'package:time_management/controllers/shared_preferences_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
+import 'package:time_management/helpers/notification_text_helper.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/routine_model.dart';
 import 'package:time_management/models/task_model.dart';
@@ -35,6 +37,7 @@ class NotificationsController extends GetxController {
       StreamController<NotificationResponse>.broadcast();
   final Int64List vibrationList = Int64List(4);
   final RxBool hasRouted = false.obs;
+  final Rxn<Map<String, String>> rPayload = Rxn<Map<String, String>>();
 
   Future<void> init(RoutineController routineController,
       GoalsController goalsController) async {
@@ -49,10 +52,41 @@ class NotificationsController extends GetxController {
     }
   }
 
-  Future<void> refreshNotifications(RoutineController routineController,
-      GoalsController goalsController) async {
+  Future<void> refreshNotifications(
+      RoutineController routineController,
+      GoalsController goalsController,
+      SharedPreferencesController sharedPreferencesController) async {
     int now = DateTime.now().dateOnly().millisecondsSinceEpoch;
-    setupRoutineNotifications(
+    var cache = await sharedPreferencesController.getSessionPref();
+    var args = await sharedPreferencesController.getSessionPayload(cache);
+    if (cache[SharedPreferencesController.SESSION_RUNNING] == 'true') {
+      bool isSession = args['session'] != null ? true : args['break'] == null;
+      int sessionTime = isSession
+          ? int.tryParse(args['session'].toString()) ?? 30
+          : int.tryParse(args['session'].toString()) ?? 5;
+      String title = isSession
+          ? NotificationTextHelper.sessionEndTitle(sessionTime)
+          : NotificationTextHelper.breakEndTitle(sessionTime);
+      String body = isSession
+          ? NotificationTextHelper.sessionEndBody(
+              int.tryParse(args['total'].toString()) ?? 0)
+          : NotificationTextHelper.breakEndBody();
+      String payload = isSession
+          ? NotificationTextHelper.sessionEndPayload(args['uid'].toString(),
+              args['session'].toString(), args['total'].toString())
+          : NotificationTextHelper.breakEndPayload(args['uid'].toString(),
+              args['break'].toString(), args['total'].toString());
+      var notifVal = await scheduleAlarm(
+          title,
+          body,
+          DateTime.fromMillisecondsSinceEpoch(int.tryParse(
+                  cache[SharedPreferencesController.SESSION_END].toString()) ??
+              0),
+          payload: payload);
+      sharedPreferencesController.updateValue(
+          SharedPreferencesController.SESSION_NOTIF, notifVal.toString());
+    }
+    setupNotifications(
         routineController.routineList, goalsController.dayPlansList[now] ?? []);
   }
 
@@ -70,13 +104,17 @@ class NotificationsController extends GetxController {
                 additionalFlags: Int32List.fromList(<int>[insistentFlag]))));
   }
 
-  Future<void> setupRoutineNotifications(
+  Future<void> setupNotifications(
       List<Routine> routines, List<DayPlanItem> todayPlanItems) async {
     flutterLocalNotificationsPlugin.cancelAll();
+
     for (var routine in routines) {
       try {
-        if ((routine.seq ?? -1) < 4) {
-          scheduleRoutine(routine);
+        if ((routine.seq ?? 5) < 4) {
+          await scheduleRoutine(routine,
+              payload: 'page:2|routineUid:${routine.uid}');
+        } else if ((routine.seq ?? -1) >= 5) {
+          scheduleRoutine(routine, payload: 'page:2|routineUid:${routine.uid}');
         }
         // } else if ((routine.seq ?? -1) == 4 &&
         //     routine.endDate != null &&
@@ -133,23 +171,36 @@ class NotificationsController extends GetxController {
         return MapEntry(e, e);
       }
     }));
+    this.rPayload.value = args;
     if (response.payload != null) {
-      if (args['route'] != null) {
-        Get.offAllNamed(
-          '/',
-        );
-        switch (args['route']) {
-          case 'focus':
-            Get.lazyPut(() => SessionController());
-            Get.to(() => FocusPage());
+      if (args['page'] != null) {
+        switch (args['page']) {
+          case '0':
+            _routeToDayPlan(args);
+            break;
+          case '2':
+            _routeToChecklist(args);
             break;
         }
-      } else {
-        Get.offAllNamed(
-          '/',
-          arguments: args,
-        );
       }
+    }
+  }
+
+  void _routeToChecklist(Map<String, String> payload) {
+    Get.offAllNamed(
+      '/',
+    );
+  }
+
+  void _routeToDayPlan(Map<String, String> payload) {
+    Get.offAllNamed(
+      '/',
+    );
+    switch (payload['route']) {
+      case 'focus':
+        Get.lazyPut(() => SessionController());
+        Get.to(() => FocusPage());
+        break;
     }
   }
 
@@ -194,19 +245,12 @@ class NotificationsController extends GetxController {
 
   Future<int> scheduleAlarm(String title, String body, DateTime time,
       {String? payload}) async {
-        vibrationList[0] = 100;
-        vibrationList[1] = 200;
-        vibrationList[2] = 300;
-        vibrationList[3] = 400;
-        
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails('Scheduled Alarm', 'Alarm',
             channelDescription: 'Alarms that are scheduled to show once',
             importance: Importance.max,
             priority: Priority.max,
             onlyAlertOnce: false,
-            channelBypassDnd: true,
-            vibrationPattern: vibrationList,
             when: time.millisecondsSinceEpoch);
     DateTime date = time;
     tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,
@@ -275,8 +319,8 @@ class NotificationsController extends GetxController {
             'Routine',
             channelData,
             channelDescription: channelData,
-            importance: Importance.high,
-            priority: Priority.high,
+            importance: Importance.max,
+            priority: Priority.max,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

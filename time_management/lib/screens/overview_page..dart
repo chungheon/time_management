@@ -23,13 +23,12 @@ class OverviewPage extends StatefulWidget {
 class _OverviewPageState extends State<OverviewPage>
     with TickerProviderStateMixin {
   final GoalsController _goalsController = Get.find<GoalsController>();
-
   final NotificationsController _notificationsController =
       Get.find<NotificationsController>();
-
   final RoutineController _routineController = Get.find<RoutineController>();
-
   late TabController _tabController;
+  final RxString _idString = RxString("");
+
   @override
   void initState() {
     _tabController = TabController(length: 2, vsync: this);
@@ -38,20 +37,38 @@ class _OverviewPageState extends State<OverviewPage>
 
   @override
   Widget build(BuildContext context) {
-    var arguments = ModalRoute.of(context)!.settings.arguments;
+    var arguments = _notificationsController.rPayload.value;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _notificationsController.getActiveNotifications().then((val) {
+        _idString.value = val
+            .map((e) {
+              return "${e.id}: ${e.title} - ${e.body} - ${e.payload}";
+            })
+            .toList()
+            .toString();
+      });
+    });
     if (arguments != null) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) async {
-        print((arguments as Map)['routineUid']);
-
-        // if ((arguments as Map)['routineUid'] != null) {
-        //   Routine? rActionRecv = _routineController.routineList
-        //       .firstWhereOrNull((element) =>
-        //           element.uid == int.tryParse(arguments['routineUid']));
-        //   if ((rActionRecv?.seq ?? -1) >= 5) {
-        //     _routineController.generateTaskFromRoutine(
-        //         _goalsController, rActionRecv!);
-        //   }
-        // }
+        if ((arguments as Map)['routineUid'] != null) {
+          Routine? rActionRecv = _routineController.routineList
+              .firstWhereOrNull((element) =>
+                  element.uid == int.tryParse(arguments['routineUid'] ?? ""));
+          _notificationsController.rPayload.value == null;
+          if (rActionRecv?.seq != null) {
+            var items = _routineController.checkList
+                .where((e) => e.routineUid == (rActionRecv?.uid ?? -1));
+            await _routineController.checkItem(
+              rActionRecv!.uid ?? -1,
+              isChecked: items.isNotEmpty,
+              checkListId: items.isNotEmpty ? items.first.uid : null,
+            );
+            if ((rActionRecv.seq ?? -1) >= 5) {
+              _routineController.generateTaskFromRoutine(
+                  _goalsController, rActionRecv);
+            }
+          }
+        }
       });
     }
 
@@ -425,6 +442,7 @@ class _OverviewPageState extends State<OverviewPage>
             _routineGroup(weekly, "Weekly"),
             _routineGroup(monthly, "Monthly"),
             _routineGroup(yearly, "Yearly"),
+            Obx(() => Text(_idString.value)),
           ]);
         });
   }
