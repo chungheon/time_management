@@ -452,6 +452,7 @@ class FocusPage extends StatelessWidget {
                               DateTime.now().dateOnly().millisecondsSinceEpoch;
                           List<DayPlanItem> dayItems =
                               _goalsController.dayPlansList[now] ?? [];
+                          dayItems.sort(DayPlanItem.prioritySort);
                           return ListView.builder(
                             itemCount: dayItems.length,
                             itemBuilder: (context, index) {
@@ -509,7 +510,7 @@ class FocusPage extends StatelessWidget {
               _goalsController.update();
             }
           });
-        }else{
+        } else {
           _updateTimer.value.cancel();
           _updateTimer.value =
               Timer.periodic(const Duration(milliseconds: 600), (timer) {

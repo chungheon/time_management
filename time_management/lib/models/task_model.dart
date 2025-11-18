@@ -100,9 +100,7 @@ class Task with SQFLiteObject {
       if (firstDate == secondDate) {
         return (first.task ?? "").compareTo(second.task ?? "");
       } else {
-        if (firstDate == 0 && secondDate == 0) {
-          return 0;
-        } else if (firstDate != 0 && secondDate == 0) {
+        if (firstDate != 0 && secondDate == 0) {
           return -1;
         } else if (firstDate == 0 && secondDate != 0) {
           return 1;

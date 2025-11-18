@@ -43,30 +43,16 @@ class DayPlanItem with SQFLiteObject {
   }
 
   static int prioritySort(DayPlanItem first, DayPlanItem second) {
-    if (first.task == null) {
-      if (second.task != null) {
-        return 1;
-      }
-    } else if (second.task == null) {
-      return -1;
-    }
-
     if ((first.taskPriority?.index == second.taskPriority?.index)) {
       return Task.prioritySort(first.task!, second.task!);
-    }
-
-    if (first.task!.status == TaskStatus.completed ||
-        first.task!.status == TaskStatus.archive) {
-      if (second.task!.status != TaskStatus.completed &&
-          second.task!.status != TaskStatus.archive) {
-        return 1;
+    } else {
+      if ((first.task?.status?.index ?? 0) !=
+          (second.task?.status?.index ?? 0)) {
+        return Task.prioritySort(first.task!, second.task!);
       }
-    } else if (second.task!.status == TaskStatus.completed ||
-        second.task!.status == TaskStatus.archive) {
-      return -1;
+      return (first.taskPriority?.index ?? 0) -
+          (second.taskPriority?.index ?? 0);
     }
-
-    return (first.taskPriority?.index ?? 0) - (second.taskPriority?.index ?? 0);
   }
 
   @override
