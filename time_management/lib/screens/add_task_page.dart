@@ -107,10 +107,15 @@ class AddTaskPage extends StatelessWidget {
   Future<void> onTapViewTemplates(context) async {
     List<Task> uniqueList = [];
     List<String> uniqueTasks = [];
+    int pastTwo = DateTime.now()
+        .subtract(const Duration(days: 2))
+        .dateOnly()
+        .millisecondsSinceEpoch;
     selectedGoal.value?.tasks.forEach((element) {
       if (element.task != null &&
           element.status != TaskStatus.completed &&
-          !uniqueTasks.contains(element.task)) {
+          !uniqueTasks.contains(element.task) &&
+          (element.actionDate == null || (element.actionDate!) >= pastTwo)) {
         uniqueList.add(element);
         uniqueTasks.add(element.task!);
       }

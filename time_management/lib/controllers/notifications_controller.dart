@@ -101,6 +101,7 @@ class NotificationsController extends GetxController {
                 importance: Importance.max,
                 priority: Priority.max,
                 onlyAlertOnce: false,
+                enableVibration: true,
                 additionalFlags: Int32List.fromList(<int>[insistentFlag]))));
   }
 
@@ -224,6 +225,11 @@ class NotificationsController extends GetxController {
                 AndroidFlutterLocalNotificationsPlugin>()
             ?.requestExactAlarmsPermission() ??
         false;
+    await flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationPolicyAccess() ??
+        false;
     return (exactAlarm ? 1 : 0) + (notification ? 2 : 0);
   }
 
@@ -251,6 +257,7 @@ class NotificationsController extends GetxController {
             importance: Importance.max,
             priority: Priority.max,
             onlyAlertOnce: false,
+            enableVibration: true,
             when: time.millisecondsSinceEpoch);
     DateTime date = time;
     tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,
@@ -321,6 +328,7 @@ class NotificationsController extends GetxController {
             channelDescription: channelData,
             importance: Importance.max,
             priority: Priority.max,
+            enableVibration: true,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

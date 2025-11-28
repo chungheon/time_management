@@ -1523,6 +1523,13 @@ class _GoalsPageState extends State<GoalsPage>
                       () => AddTaskPage(
                         returnRoute: curr,
                         goal: goal,
+                        startDate: _goalViewController.calendarView.value
+                            ? DateTimeHelpers.getFormattedDate(DateTime.now()
+                                .dateOnly()
+                                .add(Duration(
+                                    days: _goalViewController
+                                        .selectedDateView.value)))
+                            : null,
                       ),
                     );
                   }

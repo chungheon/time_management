@@ -298,7 +298,7 @@ class TaskViewCalendarWidget extends StatelessWidget {
     int difference,
     List<Task> tasks,
   ) {
-    DateTime now = DateTime.now();
+    DateTime now = DateTime.now().dateOnly();
     DateTime diffDate = now.add(Duration(days: difference));
     return Align(
       alignment: Alignment.topCenter,
