@@ -148,8 +148,10 @@ class SessionController extends GetxController {
             _sqlController.insertObject(currCounter.value!);
           } else {
             _sqlController.updateObject(currCounter.value!,
-                where:
-                    "${SQLConstants.colSessionCounterSessId}=${currCounter.value?.sessId ?? -1}");
+                where: "${SQLConstants.colSessionCounterSessId} = " +
+                    "${currCounter.value?.sessId ?? -1} " +
+                    " AND ${SQLConstants.colSessionCounterSessInterval} = " +
+                    "${currCounter.value?.sessionInterval}");
           }
         } else {
           currentSess.value.breakCount =

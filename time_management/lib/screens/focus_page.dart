@@ -13,7 +13,6 @@ import 'package:time_management/constants/string_constants.dart';
 import 'package:time_management/controllers/goal_view_controller.dart';
 import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/session_controller.dart';
-import 'package:time_management/controllers/view_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
 import 'package:time_management/models/session_model.dart';
@@ -193,17 +192,6 @@ class FocusPage extends StatelessWidget {
       canPop: false,
       onPopInvokedWithResult: (pop, _) {
         if (!pop) {
-          // showDialog(
-          //   context: context,
-          //   builder: (_) => DialogConstants.exitDialog(
-          //       returnRoute: returnRoute,
-          //       msg: "Exit Focus Mode?",
-          //       onConfirm: () async {
-          //         _sessionController.timer.value.cancel();
-          //         // _sessionController.removeNotification(
-          //         //     _sessionController.currentNotifId.value);
-          //       }),
-          // );
           _sessionController.timer.value.cancel();
           Get.back();
         }
@@ -216,14 +204,12 @@ class FocusPage extends StatelessWidget {
               msg: "Exit Focus Mode?",
               onConfirm: () async {
                 _sessionController.timer.value.cancel();
-                // _sessionController.removeNotification(
-                //     _sessionController.currentNotifId.value);
               }),
           additionalAction: [
             InkWell(
               child: const Material(
                 child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10.0),
+                    padding: EdgeInsets.symmetric(horizontal: 5.0),
                     child: Icon(Icons.list_alt_rounded)),
               ),
               onTap: () => onTapViewStatus(context),
