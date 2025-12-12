@@ -3,6 +3,7 @@
 // Habit (Recurrring Goal) Model - Goal, Repeat 1d/7d/30d.
 
 // ignore_for_file: prefer_adjacent_string_concatenation
+import 'package:get/get.dart';
 import 'package:time_management/constants/sql_constants.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/document_model.dart';
@@ -34,6 +35,45 @@ class Goal with SQFLiteObject {
     int? rDueDate =
         int.tryParse(queryResult[SQLConstants.colGoalDueDate].toString());
     return Goal(uid: rUid, name: rName, purpose: rPurpose, dueDate: rDueDate);
+  }
+
+  static int sortActionDate(Goal first, Goal second) {
+    if (first.dueDate != null) {
+      if (second.dueDate != null) {
+        return first.dueDate! - second.dueDate!;
+      } else {
+        return 1;
+      }
+    } else if (second.dueDate != null) {
+      return -1;
+    }
+    return 0;
+  }
+
+  static int prioritySort(Goal first, Goal second) {
+    if (first.tasks.isEmpty && second.tasks.isEmpty) {
+      return sortActionDate(first, second);
+    }
+    if (first.tasks.isEmpty) {
+      return 1;
+    } else if (second.tasks.isEmpty) {
+      return -1;
+    }
+
+    Task? firstTask = first.tasks.firstWhereOrNull((t) => t.actionDate != null);
+    Task? secondTask =
+        second.tasks.firstWhereOrNull((t) => t.actionDate != null);
+
+    int diff = ((firstTask?.actionDate ?? 0) - (secondTask?.actionDate ?? 0));
+    if (firstTask?.actionDate == null || secondTask?.actionDate == null) {
+      int actionDiff = sortActionDate(first, second);
+      if (actionDiff == 0) {
+        return diff;
+      } else {
+        return actionDiff;
+      }
+    }
+    return diff;
   }
 
   void update(Goal newGoal) {
@@ -80,8 +120,9 @@ class Goal with SQFLiteObject {
   @override
   String toString() {
     return 'Goal{${SQLConstants.colGoalId}: $uid, ${SQLConstants.colGoalName}: $name,' +
-        ' ${SQLConstants.colGoalPurpose}: $purpose, tags:$tags, '+ 
-        '${SQLConstants.colGoalDueDate}: ${DateTimeHelpers.getDateStr(dueDate)}},' + 'docs: $documents';
+        ' ${SQLConstants.colGoalPurpose}: $purpose, tags:$tags, ' +
+        '${SQLConstants.colGoalDueDate}: ${DateTimeHelpers.getDateStr(dueDate)}},' +
+        'docs: $documents';
   }
 
   @override

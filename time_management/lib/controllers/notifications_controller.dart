@@ -258,6 +258,7 @@ class NotificationsController extends GetxController {
             priority: Priority.max,
             onlyAlertOnce: false,
             enableVibration: true,
+            additionalFlags: Int32List.fromList(<int>[insistentFlag]),
             when: time.millisecondsSinceEpoch);
     DateTime date = time;
     tz.TZDateTime scheduled = tz.TZDateTime(tz.local, date.year, date.month,

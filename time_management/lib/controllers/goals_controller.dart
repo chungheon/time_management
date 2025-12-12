@@ -24,6 +24,8 @@ class GoalsController extends GetxController {
     super.onInit();
     refreshList().then((value) {
       FlutterNativeSplash.remove();
+      goalList.sort(Goal.prioritySort);
+      update();
     });
   }
 
@@ -159,8 +161,10 @@ class GoalsController extends GetxController {
     if (dayPlan.isEmpty) {
       for (Goal goal in goalList) {
         for (Task t in goal.tasks) {
-          if (t.status == TaskStatus.upcoming ||
-              t.status == TaskStatus.ongoing) {
+          if ((t.status == TaskStatus.upcoming ||
+                  t.status == TaskStatus.ongoing) &&
+              t.actionDate != null &&
+              t.actionDate! >= now) {
             dayPlan.add(DayPlanItem(
                 taskId: t.uid,
                 task: t,
