@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:get/get.dart';
@@ -23,6 +24,7 @@ void main() async {
 //All required initialization for the app
 Future<void> flutterInit() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  // await Firebase.initializeApp(options: FirebaseOptions.currentPlatform);
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   tzd.initializeTimeZones();
   tz.Location location = tz.getLocation('GMT');

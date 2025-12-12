@@ -8,6 +8,7 @@ import 'package:time_management/controllers/goals_controller.dart';
 import 'package:time_management/controllers/view_controller.dart';
 import 'package:time_management/helpers/date_time_helpers.dart';
 import 'package:time_management/models/day_plan_item_model.dart';
+import 'package:time_management/models/goal_model.dart';
 import 'package:time_management/models/task_model.dart';
 import 'package:time_management/styles.dart';
 
@@ -23,6 +24,8 @@ class DateHeaderWidget extends StatelessWidget implements PreferredSizeWidget {
     return GestureDetector(
       onTap: () {
         update?.call();
+        _goalsController.goalList.sort(Goal.prioritySort);
+        _goalsController.update();
       },
       child: GetBuilder(
         init: _viewController,
